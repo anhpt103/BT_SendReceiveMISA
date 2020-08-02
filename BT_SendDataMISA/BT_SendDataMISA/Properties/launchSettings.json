@@ -1,0 +1,10 @@
+﻿{
+  "profiles": {
+    "BT_SendDataMISA": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

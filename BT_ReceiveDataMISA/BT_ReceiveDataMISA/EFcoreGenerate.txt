@@ -1,0 +1,21 @@
+﻿<!-- Install tool .NetCore -->
+dotnet tool install --global dotnet-ef
+
+<!-- Create a migration -->
+dotnet ef migrations add InitialDatabase
+
+<!-- Update the database -->
+dotnet ef database update
+
+<!-- Remove a migration -->
+dotnet ef migrations remove
+
+<!-- Revert a migration -->
+dotnet ef database update LastGoodMigration
+
+<!-- Generate SQL scripts -->
+dotnet ef migrations script
+<!-- With From (to implied) -->
+dotnet ef migrations script 20190725054716_Add_new_tables
+<!-- With From and To -->
+dotnet ef migrations script 20190725054716_Add_new_tables 20190829031257_Add_audit_table
