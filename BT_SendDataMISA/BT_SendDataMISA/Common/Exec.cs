@@ -15,7 +15,6 @@ namespace BT_SendDataMISA.Common
         public const int QueryTypeNoOutput = 1;
         public const int QueryTypeWithOutputs = 2;
         public const int QueryTypeGetDataTable = 3;
-        private static readonly ILogger<Exec> _logger;
         static public string ConnectionString { get; set; }
 
         public DbTransaction transac { get; set; }
@@ -45,8 +44,7 @@ namespace BT_SendDataMISA.Common
         /// <returns></returns>
         static public string ExecStore(string storeName)
         {
-            List<object> outValue = null;
-            return ExecStore(ConnectionString, storeName, new { }, QueryTypeNoOutput, null, out outValue);
+            return ExecStore(ConnectionString, storeName, new { }, QueryTypeNoOutput, null, out List<object> outValue);
         }
         /// <summary>
         /// Hàm tĩnh, cho phép execute store storeName trong DB mà không cần khởi tạo object Exec, với connection string strConnect được truyền vào
@@ -55,8 +53,7 @@ namespace BT_SendDataMISA.Common
         /// <param name="storeName"></param>
         static public string ExecStore(string strConnect, string storeName)
         {
-            List<object> outValue = null;
-            return ExecStore(strConnect, storeName, new { }, QueryTypeNoOutput, null, out outValue);
+            return ExecStore(strConnect, storeName, new { }, QueryTypeNoOutput, null, out List<object> outValue);
         }
         /// <summary>
         /// Hàm tĩnh, cho phép execute store storeName trong DB, với tham số parameters mà không cần khởi tạo object Exec, dùng default ConnectionString (được set trong key AppSettingsDBKey = "MSSQL" ở file app.config hoặc web.config)
@@ -65,8 +62,7 @@ namespace BT_SendDataMISA.Common
         /// <param name="parameters"></param>
         static public string ExecStore<T>(string storeName, T parameters) where T : class
         {
-            List<object> outValues = null;
-            return ExecStore(ConnectionString, storeName, parameters, QueryTypeNoOutput, null, out outValues);
+            return ExecStore(ConnectionString, storeName, parameters, QueryTypeNoOutput, null, out List<object> outValues);
         }
         /// <summary>
         /// Hàm tĩnh, cho phép execute store storeName trong DB, với tham số parameters mà không cần khởi tạo object Exec, với connection string strConnect được truyền vào
@@ -76,8 +72,7 @@ namespace BT_SendDataMISA.Common
         /// <param name="parameters"></param>
         static public string ExecStore<T>(string strConnect, string storeName, T parameters) where T : class
         {
-            List<object> outValue = null;
-            return ExecStore(strConnect, storeName, parameters, QueryTypeNoOutput, null, out outValue);
+            return ExecStore(strConnect, storeName, parameters, QueryTypeNoOutput, null, out List<object> outValue);
         }
         #endregion
 
@@ -199,8 +194,7 @@ namespace BT_SendDataMISA.Common
         {
             dt = null;
 
-            List<object> outValue = null;
-            string msg = ExecStore(strConnect, storeName, htParams, QueryTypeGetDataTable, null, out outValue);
+            string msg = ExecStore(strConnect, storeName, htParams, QueryTypeGetDataTable, null, out List<object> outValue);
             if (msg.Length > 0) return msg;
 
             if (outValue == null) return "Error: outValue is null @ExecStore";
@@ -258,8 +252,7 @@ namespace BT_SendDataMISA.Common
         {
             v = Guid.Empty;
 
-            object outValue = null;
-            string msg = ExecStore(strConnect, storeName, parameters, outVarName, out outValue);
+            string msg = ExecStore(strConnect, storeName, parameters, outVarName, out object outValue);
             if (msg.Length > 0) return msg;
 
             if (outValue == null) return "Error: Out value is null @ExecStore with spName " + storeName + " and param " + GetListParam(parameters);
@@ -360,8 +353,7 @@ namespace BT_SendDataMISA.Common
         {
             v = 0;
 
-            object outValue = null;
-            string msg = ExecStore(strConnect, storeName, parameters, outVarName, out outValue);
+            string msg = ExecStore(strConnect, storeName, parameters, outVarName, out object outValue);
             if (msg.Length > 0) return msg;
 
             if (outValue == null) return "Error: Out value is null @ExecStore with spName " + storeName + " and param " + GetListParam(parameters);
@@ -666,9 +658,8 @@ namespace BT_SendDataMISA.Common
 
                 int rowCount = ((SqlCommand)result.AsyncState).EndExecuteNonQuery(result);
             }
-            catch (Exception ex)
+            catch /*(Exception ex)*/
             {
-                _logger.LogError(sParam + " lỗi: " + ex.ToString());
             }
             finally
             {

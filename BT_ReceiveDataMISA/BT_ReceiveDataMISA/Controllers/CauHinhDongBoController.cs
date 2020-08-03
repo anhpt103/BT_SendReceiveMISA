@@ -1,19 +1,21 @@
 ﻿using BT_ReceiveDataMISA.Constanst;
 using BT_ReceiveDataMISA.Entities;
+using BT_ReceiveDataMISA.Models;
 using BT_ReceiveDataMISA.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 
 namespace BT_ReceiveDataMISA.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class SettingInfoController : ControllerBase
+    public class CauHinhDongBoController : ControllerBase
     {
-        private readonly ILogger<SettingInfoController> _logger;
+        private readonly ILogger<CauHinhDongBoController> _logger;
         private ICauHinhDongBoService _cauHinhDongBoService;
 
-        public SettingInfoController(ILogger<SettingInfoController> logger, ICauHinhDongBoService cauHinhDongBoService)
+        public CauHinhDongBoController(ILogger<CauHinhDongBoController> logger, ICauHinhDongBoService cauHinhDongBoService)
         {
             _logger = logger;
             _cauHinhDongBoService = cauHinhDongBoService;
@@ -30,5 +32,10 @@ namespace BT_ReceiveDataMISA.Controllers
             return Ok(outSetting);
         }
 
+        [HttpPost("Post_TT3442016_B07")]
+        public IActionResult Post_TT3442016_B07(List<TT3442016_B07> listTT3442016_B07)
+        {
+            return Ok(listTT3442016_B07);
+        }
     }
 }

@@ -28,7 +28,7 @@ namespace BT_ReceiveDataMISA.Services
 
             try
             {
-                outSetting = _dbContext.Settings.FirstOrDefault(s => s.ClientKey == clientKey);
+                outSetting = _dbContext.CauHinhDongBos.FirstOrDefault();
                 if (outSetting == null) return Msg.SETTING_NOTFOUND;
             }
             catch (Exception ex)

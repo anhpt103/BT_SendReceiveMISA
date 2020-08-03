@@ -1,5 +1,7 @@
 ﻿using BT_SendDataMISA.Common;
+using BT_SendDataMISA.HttpClientAPI;
 using BT_SendDataMISA.Models;
+using FluentResults;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -44,8 +46,14 @@ namespace BT_SendDataMISA
 
             while (!stoppingToken.IsCancellationRequested)
             {
+                string urlAPI = _configuration.GetValue<string>("WebServer:UrlAPI");
+                if (string.IsNullOrEmpty(urlAPI)) { _logger.LogError("Không tìm thấy cấu hình WebServer:UrlAPI trong file appsettings.json"); return; }
+
                 msg = GetReport(out List<TT3442016_B07> outTT3442016_B07);
                 if (msg.Length > 0) _logger.LogError(msg);
+
+                HttpClientPost httpClientPost = new HttpClientPost();
+                Result response = await httpClientPost.SendsRequest(urlAPI + "CauHinhDongBo/Post_TT3442016_B07", outTT3442016_B07);
 
                 //var result = await httpClient.GetAsync("https://localhost:44390/api/SettingInfo/GetSetting/L3HGMGzlMl3ni2rluvBL1QqQZ6Ain2y5");
                 //if (result.IsSuccessStatusCode)

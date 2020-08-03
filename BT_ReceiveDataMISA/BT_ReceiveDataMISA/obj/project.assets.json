@@ -5084,11 +5084,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\MyProject\\BT_ReceiveDataMISA\\BT_ReceiveDataMISA\\BT_ReceiveDataMISA.csproj",
+      "projectUniqueName": "D:\\work-project\\MyProject\\BT_SendReceiveMISA\\BT_ReceiveDataMISA\\BT_ReceiveDataMISA\\BT_ReceiveDataMISA.csproj",
       "projectName": "BT_ReceiveDataMISA",
-      "projectPath": "E:\\MyProject\\BT_ReceiveDataMISA\\BT_ReceiveDataMISA\\BT_ReceiveDataMISA.csproj",
+      "projectPath": "D:\\work-project\\MyProject\\BT_SendReceiveMISA\\BT_ReceiveDataMISA\\BT_ReceiveDataMISA\\BT_ReceiveDataMISA.csproj",
       "packagesPath": "C:\\Users\\TUANANH\\.nuget\\packages\\",
-      "outputPath": "E:\\MyProject\\BT_ReceiveDataMISA\\BT_ReceiveDataMISA\\obj\\",
+      "outputPath": "D:\\work-project\\MyProject\\BT_SendReceiveMISA\\BT_ReceiveDataMISA\\BT_ReceiveDataMISA\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\TUANANH\\AppData\\Roaming\\NuGet\\NuGet.Config",

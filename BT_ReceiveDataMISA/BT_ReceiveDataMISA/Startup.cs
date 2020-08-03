@@ -28,7 +28,7 @@ namespace BT_ReceiveDataMISA
 
             services.AddControllers();
 
-            services.AddScoped<ISettingService, CauHinhDongBoService>();
+            services.AddScoped<ICauHinhDongBoService, CauHinhDongBoService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
