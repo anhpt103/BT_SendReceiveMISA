@@ -1,10 +1,9 @@
 ﻿using FluentResults;
-using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace BT_SendDataMISA.HttpClientAPI
@@ -13,19 +12,32 @@ namespace BT_SendDataMISA.HttpClientAPI
     {
         public async Task<Result> SendsRequest(string url, object obj)
         {
-            var json = JsonConvert.SerializeObject(obj);
-            var data = new StringContent(json, Encoding.UTF8, "application/json");
-
             using (var client = new HttpClient())
             {
                 try
                 {
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "BOn8WT6PNbf3vWHsITrznIWyaZ7QhISp");
-                    var response = await client.PostAsync(url, data);
+                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url);
+                    var keyValues = new List<KeyValuePair<string, string>>();
+
+                    Dictionary<string, object> dict = obj.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(obj, null));
+                    foreach (var kv in dict)
+                    {
+                        keyValues.Add(new KeyValuePair<string, string>(kv.Key, kv.Value.ToString()));
+                    }
+
+                    request.Content = new FormUrlEncodedContent(keyValues);
+                    var response = await client.SendAsync(request);
+
                     if (response.IsSuccessStatusCode)
                     {
-                        if (response.StatusCode == HttpStatusCode.OK) return Result.Ok(response.Content.ReadAsStringAsync().Result);
-                        else return Result.Fail("Phản hồi từ API, mã lỗi: " + response.StatusCode);
+                        if (response.StatusCode != HttpStatusCode.OK) return Result.Fail("Phản hồi từ API, mã lỗi: " + response.StatusCode);
+                        else
+                        {
+                            string result = response.Content.ReadAsStringAsync().Result;
+                            if (result.Length == 0) Result.Fail("Kết quả trả về từ API rỗng");
+
+                            return Result.Ok().WithSuccess(result);
+                        }
                     }
                     else return Result.Fail("Xảy ra ngoại lệ: " + response.StatusCode);
                 }

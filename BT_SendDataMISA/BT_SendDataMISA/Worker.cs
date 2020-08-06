@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static BT_SendDataMISA.Models.AccessToken;
 
 namespace BT_SendDataMISA
 {
@@ -39,6 +40,17 @@ namespace BT_SendDataMISA
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            Result result = await GetAccessTokenAsync();
+            if (result.IsFailed)
+            {
+                IEnumerable<Reason> reasons = result.Reasons;
+                _logger.LogError(reasons.FirstOrDefault().Message);
+                return;
+            }
+
+            IEnumerable<Success> successes = result.Successes;
+            Convertor.StringToObject(successes.FirstOrDefault().Message, out TokenInfo accessToken);
+            string test = accessToken.access_token;
             string msg = DoBeginProcessSync();
             if (msg.Length > 0) _logger.LogError(msg);
 
@@ -55,18 +67,41 @@ namespace BT_SendDataMISA
                 HttpClientPost httpClientPost = new HttpClientPost();
                 Result response = await httpClientPost.SendsRequest(urlAPI + "CauHinhDongBo/Post_TT3442016_B07", outTT3442016_B07);
 
-                //var result = await httpClient.GetAsync("https://localhost:44390/api/SettingInfo/GetSetting/L3HGMGzlMl3ni2rluvBL1QqQZ6Ain2y5");
-                //if (result.IsSuccessStatusCode)
-                //{
-                //    _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-                //}
-                //else
-                //{
-                //    _logger.LogInformation("Xảy ra lỗi", result.StatusCode);
-                //}
-
                 await Task.Delay((60 * 1000 * 60), stoppingToken);
             }
+        }
+
+        private async Task<Result> GetAccessTokenAsync()
+        {
+            string url = _configuration.GetValue<string>("AuthenToken:url");
+            if (string.IsNullOrEmpty(url)) return Result.Fail("Không tìm thấy cấu hình AuthenToken:url trong file appsettings.json");
+
+            string username = _configuration.GetValue<string>("AuthenToken:username");
+            if (string.IsNullOrEmpty(username)) return Result.Fail("Không tìm thấy cấu hình AuthenToken:username trong file appsettings.json");
+
+            string password = _configuration.GetValue<string>("AuthenToken:password");
+            if (string.IsNullOrEmpty(password)) return Result.Fail("Không tìm thấy cấu hình AuthenToken:password trong file appsettings.json");
+
+            string client_id = _configuration.GetValue<string>("AuthenToken:client_id");
+            if (string.IsNullOrEmpty(client_id)) return Result.Fail("Không tìm thấy cấu hình AuthenToken:client_id trong file appsettings.json");
+
+            string grant_type = _configuration.GetValue<string>("AuthenToken:grant_type");
+            if (string.IsNullOrEmpty(grant_type)) return Result.Fail("Không tìm thấy cấu hình AuthenToken:grant_type trong file appsettings.json");
+
+            string tendiaban = _configuration.GetValue<string>("AuthenToken:tendiaban");
+            if (string.IsNullOrEmpty(tendiaban)) return Result.Fail("Không tìm thấy cấu hình AuthenToken:tendiaban trong file appsettings.json");
+
+            TokenParam tokenParam = new TokenParam
+            {
+                username = username,
+                password = password,
+                client_id = client_id,
+                grant_type = grant_type,
+                tendiaban = tendiaban
+            };
+
+            HttpClientPost httpClientPost = new HttpClientPost();
+            return await httpClientPost.SendsRequest(url, tokenParam);
         }
 
         private string DoBeginProcessSync()
