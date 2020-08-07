@@ -50,7 +50,6 @@ namespace BT_SendDataMISA
 
             IEnumerable<Success> successes = result.Successes;
             Convertor.StringToObject(successes.FirstOrDefault().Message, out TokenInfo accessToken);
-            string test = accessToken.access_token;
             string msg = DoBeginProcessSync();
             if (msg.Length > 0) _logger.LogError(msg);
 
