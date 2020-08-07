@@ -1,6 +1,7 @@
 ﻿using BT_SendDataMISA.Common;
 using BT_SendDataMISA.HttpClientAPI;
 using BT_SendDataMISA.Models;
+using BT_SendDataMISA.Report;
 using FluentResults;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -52,6 +53,9 @@ namespace BT_SendDataMISA
             Convertor.StringToObject(successes.FirstOrDefault().Message, out TokenInfo accessToken);
             string msg = DoBeginProcessSync();
             if (msg.Length > 0) _logger.LogError(msg);
+
+            B02BCTC_Sync b02BCTC_Sync = new B02BCTC_Sync();
+            b02BCTC_Sync.GetDataReport();
 
             GetUnitSendData(out string MaDonViQuanHeNganSach, out string TenDonViQuanHeNganSach);
 
