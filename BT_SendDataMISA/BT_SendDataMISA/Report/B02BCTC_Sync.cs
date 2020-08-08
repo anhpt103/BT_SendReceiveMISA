@@ -16,8 +16,7 @@ namespace BT_SendDataMISA.Report
             string pMasterID = null;
             string @pIsPrintMonth13 = null;
 
-            string msg = Exec.GetOne("Proc_FIR_Get02_BCTC_ExportForX1", new { pStartDate, pFromDate, pToDate, pBudgetChapter, pSummaryBudgetChapter, pMasterID, @pIsPrintMonth13 }, out ReportHeader outItem);
-            msg = Exec.GetList("Proc_FIR_Get02_BCTC_ExportForX1", new { pStartDate, pFromDate, pToDate, pBudgetChapter, pSummaryBudgetChapter, pMasterID, @pIsPrintMonth13 }, out List<B02BCQTDetailItem> outListItem);
+            string msg = Exec.MultipleResult("Proc_FIR_Get02_BCTC_ExportForX1", new { pStartDate, pFromDate, pToDate, pBudgetChapter, pSummaryBudgetChapter, pMasterID, @pIsPrintMonth13 }, out ReportHeader outItem, out List<B02BCQTDetailItem> oList);
             return "";
         }
     }
