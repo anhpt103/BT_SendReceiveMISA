@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -29,7 +28,6 @@ namespace BT_SendDataMISA.Common
             {
                 ConnectionString = ConnStr;
                 DbConnection conn = new SqlConnection(ConnStr);
-                //if (conn.State != ConnectionState.Open) conn.Open();
                 return conn;
             }
             catch { }
@@ -1322,12 +1320,12 @@ namespace BT_SendDataMISA.Common
         }
 
         /* MultipleResult */
-        static public string MultipleResult<T, TL, TLL>(string storeName, T parameters, out TL oneItem, out TLL twiceItem) where T : class where TL : class where TLL : class
+        static public string MultipleResult<T, TL, TLL>(string storeName, T parameters, out TL oneItem, out List<TLL> twiceItem) where T : class where TL : class where TLL : class
         {
             return MultipleResult(ConnectionString, storeName, parameters, out oneItem, out twiceItem);
         }
 
-        static public string MultipleResult<T, TL, TLL>(string strConnect, string storeName, T parameters, out TL oneItem, out TLL twiceItem) where T : class where TL : class where TLL : class
+        static public string MultipleResult<T, TL, TLL>(string strConnect, string storeName, T parameters, out TL oneItem, out List<TLL> twiceItem) where T : class where TL : class where TLL : class
         {
             Hashtable htParams = new Hashtable();
             AddParams(strConnect, ref htParams, parameters);
@@ -1335,10 +1333,10 @@ namespace BT_SendDataMISA.Common
             return MultipleResult(null, strConnect, storeName, htParams, out oneItem, out twiceItem);
         }
 
-        static private string MultipleResult<T, TLL>(Exec dbm, string strConnect, string storeName, Hashtable htParams, out T oneItem, out TLL twiceItem)
+        static private string MultipleResult<T, TLL>(Exec dbm, string strConnect, string storeName, Hashtable htParams, out T oneItem, out List<TLL> twiceItem)
         {
             oneItem = default(T);
-            twiceItem = default(TLL);
+            twiceItem = default(List<TLL>);
 
             List<T> list = null;
             List<TLL> listTLL = null;
@@ -1353,7 +1351,7 @@ namespace BT_SendDataMISA.Common
             if (listTLL.Count == 0) return "";
 
             oneItem = list[0];
-            twiceItem = listTLL[0];
+            twiceItem = listTLL;
 
             return msg;
         }
@@ -1408,8 +1406,11 @@ namespace BT_SendDataMISA.Common
             string msg = ExecStoreMultipleResult(strConnect, storeName, htParams, QueryTypeGetDataTable, null, out List<object> outValue, out List<object> outValueTwice);
             if (msg.Length > 0) return msg;
 
-            if (outValue == null) return "Error: outValue is null @ExecStore";
-            if (outValue.Count == 0) return "Error: outValue has no value @ExecStore";
+            if (outValue == null) return "Error: outValue is null @ExecStoreMultipleResult";
+            if (outValue.Count == 0) return "Error: outValue has no value @ExecStoreMultipleResult";
+
+            if (outValueTwice == null) return "Error: outValue is null @ExecStoreMultipleResult";
+            if (outValueTwice.Count == 0) return "Error: outValue has no value @ExecStoreMultipleResult";
 
             dt = outValue[0] as DataTable; // cast về DataTable. Trả về null nếu không cast được
             twicedt = outValueTwice[0] as DataTable; // cast về DataTable. Trả về null nếu không cast được

@@ -1,4 +1,5 @@
 ﻿using BT_SendDataMISA.Common;
+using BT_SendDataMISA.Function;
 using BT_SendDataMISA.HttpClientAPI;
 using BT_SendDataMISA.Models;
 using BT_SendDataMISA.Report;
@@ -16,9 +17,7 @@ namespace BT_SendDataMISA
 {
     public class Worker : BackgroundService
     {
-        private const string MISA_BAMBOO = "MISA Bamboo.NET";
-        private const string MISA_MIMOSA = "MISA Mimosa.NET";
-
+        private string TenUngDung = "";
         private readonly ILogger<Worker> _logger;
         public IConfiguration _configuration { get; }
 
@@ -41,7 +40,13 @@ namespace BT_SendDataMISA
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            Result result = await GetAccessTokenAsync();
+            TenUngDung = _configuration.GetValue<string>("exeConfigFile:TenUngDung");
+            if (string.IsNullOrEmpty(TenUngDung)) { _logger.LogError("Không tìm thấy cấu hình exeConfigFile:TenUngDung trong file appsettings.json"); return; }
+
+            string urlAPI = _configuration.GetValue<string>("WebServer:UrlAPI");
+            if (string.IsNullOrEmpty(urlAPI)) { _logger.LogError("Không tìm thấy cấu hình WebServer:UrlAPI trong file appsettings.json"); return; }
+
+            Result result = await GetAccessTokenAsync(urlAPI);
             if (result.IsFailed)
             {
                 IEnumerable<Reason> reasons = result.Reasons;
@@ -54,30 +59,32 @@ namespace BT_SendDataMISA
             string msg = DoBeginProcessSync();
             if (msg.Length > 0) _logger.LogError(msg);
 
-            B02BCTC_Sync b02BCTC_Sync = new B02BCTC_Sync();
-            b02BCTC_Sync.GetDataReport();
+            // Get SysScheduler From Root Database
+            result = await GetSysScheduler(urlAPI, accessToken.access_token);
+            //
 
-            GetUnitSendData(out string MaDonViQuanHeNganSach, out string TenDonViQuanHeNganSach);
+            // Get StartDatabase Misa
+            msg = CommonFunction.GetStartDateMisa(out string startDate);
+            if (msg.Length > 0) _logger.LogError(msg);
+            //
+
+            B02BCTC_Sync b02BCTC_Sync = new B02BCTC_Sync();
+            b02BCTC_Sync.GetDataReport(startDate);
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                string urlAPI = _configuration.GetValue<string>("WebServer:UrlAPI");
-                if (string.IsNullOrEmpty(urlAPI)) { _logger.LogError("Không tìm thấy cấu hình WebServer:UrlAPI trong file appsettings.json"); return; }
 
-                msg = GetReport(out List<TT3442016_B07> outTT3442016_B07);
-                if (msg.Length > 0) _logger.LogError(msg);
-
-                HttpClientPost httpClientPost = new HttpClientPost();
-                Result response = await httpClientPost.SendsRequest(urlAPI + "CauHinhDongBo/Post_TT3442016_B07", outTT3442016_B07);
+                // HttpClientPost httpClientPost = new HttpClientPost();
+                // Result response = await httpClientPost.SendsRequest(urlAPI + "CauHinhDongBo/Post_TT3442016_B07", outTT3442016_B07);
 
                 await Task.Delay((60 * 1000 * 60), stoppingToken);
             }
         }
 
-        private async Task<Result> GetAccessTokenAsync()
+        private async Task<Result> GetAccessTokenAsync(string urlAPI)
         {
-            string url = _configuration.GetValue<string>("AuthenToken:url");
-            if (string.IsNullOrEmpty(url)) return Result.Fail("Không tìm thấy cấu hình AuthenToken:url trong file appsettings.json");
+            string api = _configuration.GetValue<string>("AuthenToken:api");
+            if (string.IsNullOrEmpty(api)) return Result.Fail("Không tìm thấy cấu hình AuthenToken:api trong file appsettings.json");
 
             string username = _configuration.GetValue<string>("AuthenToken:username");
             if (string.IsNullOrEmpty(username)) return Result.Fail("Không tìm thấy cấu hình AuthenToken:username trong file appsettings.json");
@@ -104,7 +111,16 @@ namespace BT_SendDataMISA
             };
 
             HttpClientPost httpClientPost = new HttpClientPost();
-            return await httpClientPost.SendsRequest(url, tokenParam);
+            return await httpClientPost.SendsRequest("http://api.btsoftvn.com:8383/auth/token"/*urlAPI + api*/, tokenParam);
+        }
+
+        private async Task<Result> GetSysScheduler(string urlAPI, string token)
+        {
+            string api = _configuration.GetValue<string>("ApiName:GetScheduler");
+            if (string.IsNullOrEmpty(api)) return Result.Fail("Không tìm thấy cấu hình ApiName:GetScheduler trong file appsettings.json");
+
+            HttpClientPost httpClientPost = new HttpClientPost();
+            return await httpClientPost.SendsRequestWithToken(urlAPI + api, token);
         }
 
         private string DoBeginProcessSync()
@@ -135,59 +151,6 @@ namespace BT_SendDataMISA
 
             var resultConn = Exec.GetDbConnection(connectString);
             if (resultConn == null) return "Xảy ra lỗi khi kết nối Cơ sở dữ liệu";
-
-            return "";
-        }
-
-        private string GetUnitSendData(out string MaDonViQuanHeNganSach, out string TenDonViQuanHeNganSach)
-        {
-            MaDonViQuanHeNganSach = TenDonViQuanHeNganSach = "";
-
-            string exeConfigName = _configuration.GetValue<string>("exeConfigFile:Name");
-            if (string.IsNullOrEmpty(exeConfigName)) return "Không tìm thấy cấu hình exeConfigFile:Name trong file appsettings.json";
-
-            string sqlQuery = "";
-            if (exeConfigName.Equals(MISA_BAMBOO))
-                sqlQuery = @"SELECT communeID AS CompanyCode ,CompanyName
-                                FROM (SELECT OptionID, OptionValue FROM dbo.DBOption) d
-                                PIVOT
-                                (
-                                    MAX(OptionValue)
-                                    FOR OptionID in (communeID,CompanyName)
-                                ) PIV";
-
-            if (exeConfigName.Equals(MISA_MIMOSA))
-                sqlQuery = @"SELECT CompanyCode,CompanyName
-                                FROM (SELECT OptionID, OptionValue FROM dbo.DBOption) d
-                                PIVOT
-                                (
-                                    MAX(OptionValue)
-                                    FOR OptionID in (CompanyCode,CompanyName)
-                                ) PIV";
-
-            if (string.IsNullOrEmpty(sqlQuery)) return "Query Get đơn vị gửi dữ liệu có giá trị rỗng";
-
-            string msg = Exec.ExecQueryStringOne(sqlQuery, out UnitSendData unit);
-            if (msg.Length > 0) _logger.LogError("Xảy ra lỗi khi lấy thông tin đơn vị gửi");
-            if (unit == null) _logger.LogError("Thông tin đơn vị gửi rỗng");
-
-            MaDonViQuanHeNganSach = unit.CompanyCode;
-            TenDonViQuanHeNganSach = unit.CompanyName;
-
-            return "";
-        }
-
-        private string GetReport(out List<TT3442016_B07> outTT3442016_B07)
-        {
-            string StartDate = "2020-01-01 00:00:00";
-            string FromDate = "2020-01-01 00:00:00";
-            string ToDate = "2020-12-31 23:59:59";
-            string ReceiptPlanActivityTemplateListID = "";
-            string ExpensePlanActivityTemplateListID = "";
-
-            string msg = Exec.GetList("Proc_BUR_TT3442016_B07", new { StartDate, FromDate, ToDate, ReceiptPlanActivityTemplateListID, ExpensePlanActivityTemplateListID }, out outTT3442016_B07);
-            if (msg.Length > 0) return "Xảy ra lỗi khi Exec store procedure Proc_BUR_TT3442016_B07 lấy dữ liệu BC";
-            if (outTT3442016_B07 == null) return "Exec store procedure Proc_BUR_TT3442016_B07 trả về dữ liệu rỗng";
 
             return "";
         }
