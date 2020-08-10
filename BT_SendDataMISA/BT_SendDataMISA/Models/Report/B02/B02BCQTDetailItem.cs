@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BT_SendDataMISA.Models.Report
+namespace BT_SendDataMISA.Models.Report.B02
 {
     public class B02BCQTDetailItem
     {

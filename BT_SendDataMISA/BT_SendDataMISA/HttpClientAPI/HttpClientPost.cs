@@ -1,5 +1,6 @@
 ﻿using FluentResults;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -63,10 +64,14 @@ namespace BT_SendDataMISA.HttpClientAPI
 
                     if (!string.IsNullOrEmpty(token)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-                    if (obj != null)
-                    {
-                        var keyValues = new List<KeyValuePair<string, string>>();
+                    var keyValues = new List<KeyValuePair<string, string>>();
 
+                    if (obj != null && obj is IList && obj.GetType().IsGenericType && obj.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)))
+                    {
+
+                    }
+                    else if (obj != null && obj is IDictionary && obj.GetType().IsGenericType && obj.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(Dictionary<,>)))
+                    {
                         Dictionary<string, object> dict = obj.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(obj, null));
                         foreach (var kv in dict)
                         {

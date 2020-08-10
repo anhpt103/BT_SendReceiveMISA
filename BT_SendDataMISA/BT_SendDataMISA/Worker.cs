@@ -46,7 +46,7 @@ namespace BT_SendDataMISA
             string urlAPI = _configuration.GetValue<string>("WebServer:UrlAPI");
             if (string.IsNullOrEmpty(urlAPI)) { _logger.LogError("Không tìm thấy cấu hình WebServer:UrlAPI trong file appsettings.json"); return; }
 
-            Result result = await GetAccessTokenAsync(urlAPI);
+            Result result = await GetAccessTokenAsync();
             if (result.IsFailed)
             {
                 IEnumerable<Reason> reasons = result.Reasons;
@@ -61,30 +61,36 @@ namespace BT_SendDataMISA
 
             // Get SysScheduler From Root Database
             result = await GetSysScheduler(urlAPI, accessToken.access_token);
-            //
+            if (result.IsFailed)
+            {
+                IEnumerable<Reason> reasons = result.Reasons;
+                _logger.LogError(reasons.FirstOrDefault().Message);
+                return;
+            }
+            successes = result.Successes;
+            Convertor.StringToObject(successes.FirstOrDefault().Message, out List<SysScheduler> sysScheduler);
 
             // Get StartDatabase Misa
             msg = CommonFunction.GetStartDateMisa(out string startDate);
             if (msg.Length > 0) _logger.LogError(msg);
-            //
 
-            B02BCTC_Sync b02BCTC_Sync = new B02BCTC_Sync();
-            b02BCTC_Sync.GetDataReport(startDate);
-
-            while (!stoppingToken.IsCancellationRequested)
+            var application = sysScheduler.FirstOrDefault(x => x.TEN_UNGDUNG == TenUngDung);
+            if (application != null && application.TEN_UNGDUNG == TenUngDung)
             {
+                B02BCTC_Sync b02BCTC_Sync = new B02BCTC_Sync(startDate, urlAPI, accessToken.access_token, _configuration);
 
-                // HttpClientPost httpClientPost = new HttpClientPost();
-                // Result response = await httpClientPost.SendsRequest(urlAPI + "CauHinhDongBo/Post_TT3442016_B07", outTT3442016_B07);
+                while (!stoppingToken.IsCancellationRequested)
+                {
 
-                await Task.Delay((60 * 1000 * 60), stoppingToken);
+                    await Task.Delay((60 * 1000 * 60), stoppingToken);
+                }
             }
         }
 
-        private async Task<Result> GetAccessTokenAsync(string urlAPI)
+        private async Task<Result> GetAccessTokenAsync()
         {
-            string api = _configuration.GetValue<string>("AuthenToken:api");
-            if (string.IsNullOrEmpty(api)) return Result.Fail("Không tìm thấy cấu hình AuthenToken:api trong file appsettings.json");
+            string apiGetToken = _configuration.GetValue<string>("AuthenToken:api");
+            if (string.IsNullOrEmpty(apiGetToken)) return Result.Fail("Không tìm thấy cấu hình AuthenToken:api trong file appsettings.json");
 
             string username = _configuration.GetValue<string>("AuthenToken:username");
             if (string.IsNullOrEmpty(username)) return Result.Fail("Không tìm thấy cấu hình AuthenToken:username trong file appsettings.json");
@@ -111,7 +117,7 @@ namespace BT_SendDataMISA
             };
 
             HttpClientPost httpClientPost = new HttpClientPost();
-            return await httpClientPost.SendsRequest("http://api.btsoftvn.com:8383/auth/token"/*urlAPI + api*/, tokenParam);
+            return await httpClientPost.SendsRequestWithToken(apiGetToken, "", tokenParam);
         }
 
         private async Task<Result> GetSysScheduler(string urlAPI, string token)
