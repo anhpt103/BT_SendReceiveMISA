@@ -12,5 +12,8 @@ namespace BT_SendDataMISA.Models.Report.B02
         public string ReportItemDescription { get; set; }
         public decimal CurrentPeriodAmount { get; set; }
         public decimal PreviousPeriodAmount { get; set; }
+
+        public int BudgetKindItemID { get; set; }
+        public int BudgetSubKindItemID { get; set; }
     }
 }

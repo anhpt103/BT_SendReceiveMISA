@@ -1,4 +1,5 @@
-﻿using BT_SendDataMISA.Common;
+﻿using AutoMapper;
+using BT_SendDataMISA.Common;
 using BT_SendDataMISA.Function;
 using BT_SendDataMISA.HttpClientAPI;
 using BT_SendDataMISA.Models;
@@ -7,8 +8,10 @@ using FluentResults;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static BT_SendDataMISA.Models.AccessToken;
@@ -19,12 +22,14 @@ namespace BT_SendDataMISA
     {
         private string TenUngDung = "";
         private readonly ILogger<Worker> _logger;
+        private readonly IMapper _mapper;
         public IConfiguration _configuration { get; }
 
-        public Worker(ILogger<Worker> logger, IConfiguration configuration)
+        public Worker(ILogger<Worker> logger, IConfiguration configuration, IMapper mapper)
         {
             _logger = logger;
             _configuration = configuration;
+            _mapper = mapper;
         }
 
         public override Task StartAsync(CancellationToken cancellationToken)
@@ -38,51 +43,65 @@ namespace BT_SendDataMISA
             return base.StopAsync(cancellationToken);
         }
 
+        StringBuilder sb = new StringBuilder(string.Format(@"Gửi dữ liệu Start: {0}", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")));
+        private StringBuilder WriteLogErr(string msg)
+        {
+            _logger.LogError(msg);
+            sb.Append(msg);
+            return sb;
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             TenUngDung = _configuration.GetValue<string>("exeConfigFile:TenUngDung");
-            if (string.IsNullOrEmpty(TenUngDung)) { _logger.LogError("Không tìm thấy cấu hình exeConfigFile:TenUngDung trong file appsettings.json"); return; }
+            if (string.IsNullOrEmpty(TenUngDung)) { WriteLogErr(Msg.TenUngDung_AppST_404); return; }
 
             string urlAPI = _configuration.GetValue<string>("WebServer:UrlAPI");
-            if (string.IsNullOrEmpty(urlAPI)) { _logger.LogError("Không tìm thấy cấu hình WebServer:UrlAPI trong file appsettings.json"); return; }
+            if (string.IsNullOrEmpty(urlAPI)) { WriteLogErr(Msg.UrlAPI_AppST_404); return; }
 
             Result result = await GetAccessTokenAsync();
             if (result.IsFailed)
             {
                 IEnumerable<Reason> reasons = result.Reasons;
-                _logger.LogError(reasons.FirstOrDefault().Message);
+                WriteLogErr(reasons.FirstOrDefault().Message);
                 return;
             }
 
             IEnumerable<Success> successes = result.Successes;
-            Convertor.StringToObject(successes.FirstOrDefault().Message, out TokenInfo accessToken);
-            string msg = DoBeginProcessSync();
-            if (msg.Length > 0) _logger.LogError(msg);
+            string msg = Convertor.StringToObject(successes.FirstOrDefault().Message, out TokenInfo accessToken);
+            if (msg.Length > 0) WriteLogErr(Msg.Convert_TokenInfo_Err);
+
+            msg = DoBeginProcessSync();
+            if (msg.Length > 0) WriteLogErr(msg);
 
             // Get SysScheduler From Root Database
             result = await GetSysScheduler(urlAPI, accessToken.access_token);
             if (result.IsFailed)
             {
                 IEnumerable<Reason> reasons = result.Reasons;
-                _logger.LogError(reasons.FirstOrDefault().Message);
+                WriteLogErr(reasons.FirstOrDefault().Message);
                 return;
             }
+
             successes = result.Successes;
             Convertor.StringToObject(successes.FirstOrDefault().Message, out List<SysScheduler> sysScheduler);
+            if (msg.Length > 0) WriteLogErr(Msg.Convert_Lst_SysScheduler_Err);
 
-            // Get StartDatabase Misa
-            msg = CommonFunction.GetStartDateMisa(out string startDate);
-            if (msg.Length > 0) _logger.LogError(msg);
+            // Get DBInfo Misa
+            msg = CommonFunction.GetDBInfoMisa(out DbMisaInfo oMisaInfo);
+            if (msg.Length > 0) WriteLogErr(msg);
 
             var application = sysScheduler.FirstOrDefault(x => x.TEN_UNGDUNG == TenUngDung);
             if (application != null && application.TEN_UNGDUNG == TenUngDung)
             {
-                B02BCTC_Sync b02BCTC_Sync = new B02BCTC_Sync(startDate, urlAPI, accessToken.access_token, _configuration);
+                B02BCTC_Sync b02BCTC_Sync = new B02BCTC_Sync(oMisaInfo, urlAPI, accessToken.access_token, _configuration, _mapper);
+                msg = await b02BCTC_Sync.SendDataToAPI();
+                if (msg.Length > 0) WriteLogErr(msg);
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
 
-                    await Task.Delay((60 * 1000 * 60), stoppingToken);
+                    await Task.Delay(application.TIME_PERIOD, stoppingToken);
                 }
             }
         }

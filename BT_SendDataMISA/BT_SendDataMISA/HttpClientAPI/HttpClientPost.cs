@@ -1,4 +1,5 @@
 ﻿using FluentResults;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace BT_SendDataMISA.HttpClientAPI
@@ -61,23 +63,22 @@ namespace BT_SendDataMISA.HttpClientAPI
                 try
                 {
                     HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url);
-
                     if (!string.IsNullOrEmpty(token)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-                    var keyValues = new List<KeyValuePair<string, string>>();
-
-                    if (obj != null && obj is IList && obj.GetType().IsGenericType && obj.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)))
+                    if (obj != null && !(obj is IList))
                     {
-
-                    }
-                    else if (obj != null && obj is IDictionary && obj.GetType().IsGenericType && obj.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(Dictionary<,>)))
-                    {
+                        var keyValues = new List<KeyValuePair<string, string>>();
                         Dictionary<string, object> dict = obj.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(obj, null));
                         foreach (var kv in dict)
                         {
                             keyValues.Add(new KeyValuePair<string, string>(kv.Key, kv.Value.ToString()));
                         }
                         request.Content = new FormUrlEncodedContent(keyValues);
+                    }
+                    else if (obj != null && obj is IList)
+                    {
+                        var content = await Task.Run(() => JsonConvert.SerializeObject(obj));
+                        request.Content = new StringContent(content, Encoding.UTF8, "application/json");
                     }
 
                     var response = await client.SendAsync(request);

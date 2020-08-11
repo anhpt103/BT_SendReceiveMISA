@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using AutoMapper;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using System;
@@ -38,7 +39,13 @@ namespace BT_SendDataMISA
                 .UseWindowsService()
                 .ConfigureServices((hostContext, services) =>
                 {
+                    services.AddAutoMapper(typeof(Program));
                     services.AddHostedService<Worker>();
+
+                    var mappingConfig = new MapperConfiguration(mc =>
+                    {
+                        mc.AddProfile(new MappingProfile());
+                    });
                 })
                 .UseSerilog();
     }

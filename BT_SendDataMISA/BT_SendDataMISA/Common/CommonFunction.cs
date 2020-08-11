@@ -18,22 +18,35 @@ namespace BT_SendDataMISA.Function
                 StartEndDateOfMonth startEndDateOfMonth = new StartEndDateOfMonth
                 {
                     FromDate = startDate.ToString("yyyy-MM-dd HH:mm:ss"),
-                    ToDate = endDate.ToString("yyyy-MM-dd HH:mm:ss")
+                    ToDate = endDate.ToString("yyyy-MM-dd HH:mm:ss"),
+                    Month = month,
+                    Year = DateTime.Now.Year
                 };
                 listStartEndDateOYear.Add(startEndDateOfMonth);
             }
             return listStartEndDateOYear;
         }
 
-        public static string GetStartDateMisa(out string startDate)
+        public static string GetDBInfoMisa(out DbMisaInfo oMisaInfo)
         {
-            startDate = null;
-            string msg = Exec.ExecQueryStringOne("SELECT OptionValue StartDate FROM DBOption WHERE OptionID = 'DBStartDate'", out StartDateDbOption startDateDbOption);
-            if (msg.Length > 0) startDate = new DateTime(DateTime.Now.Year, 1, 1).ToString("yyyy-MM-dd HH:mm:ss");
-            if (string.IsNullOrEmpty(startDateDbOption.StartDate)) return "Không Get được thông tin DBStartDate Cơ sở dữ liệu MISA";
+            string msg = Exec.ExecQueryStringOne(string.Format(@"SELECT 
+                                                                (SELECT OptionValue FROM dbo.DBOption WHERE OptionID = 'CompanyCode') AS CompanyID ,
+                                                                (SELECT  OptionValue FROM dbo.DBOption WHERE  OptionID = 'CompanyName') AS CompanyName,
+                                                                (SELECT Version FROM DBInfo) AS ExportVersion,
+                                                                0 AS ParticularID,
+                                                                (SELECT Application + ' ' + Version FROM DBInfo) AS ProductID,
+                                                                (SELECT MISAVersionControl FROM DBInfo) AS Version,
+                                                                (SELECT OptionValue FROM dbo.DBOption WHERE OptionID='DefaultBudgetChapterCode') AS BudgetChapterID,
+                                                                (SELECT OptionValue FROM dbo.DBOption WHERE OptionID='DefaultBudgetKindItemCode') AS BudgetKindItemID, 
+                                                                (SELECT OptionValue FROM dbo.DBOption WHERE OptionID='DefaultBudgetSubKindItemCode') AS BudgetSubKindItemID,
+                                                                (SELECT OptionValue FROM DBOption WHERE OptionID = 'DBStartDate') AS StartDate,
+                                                                (SELECT OptionValue FROM DBOption WHERE OptionID = 'AccountSystem') AS AccountSystem"), out oMisaInfo);
 
-            DateTime startDateConvert = Convert.ToDateTime(startDateDbOption.StartDate);
-            startDate = startDateConvert.ToString("yyyy-MM-dd HH:mm:ss");
+            if (msg.Length > 0) return Msg.Exec_GetDBInfoMisa_Err;
+            if (string.IsNullOrEmpty(oMisaInfo.StartDate)) oMisaInfo.StartDate = new DateTime(DateTime.Now.Year, 1, 1).ToString("yyyy-MM-dd HH:mm:ss");
+
+            DateTime startDateConvert = Convert.ToDateTime(oMisaInfo.StartDate);
+            oMisaInfo.StartDate = startDateConvert.ToString("yyyy-MM-dd HH:mm:ss");
 
             return "";
         }
