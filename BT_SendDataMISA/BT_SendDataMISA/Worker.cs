@@ -95,8 +95,15 @@ namespace BT_SendDataMISA
             if (application != null && application.TEN_UNGDUNG == TenUngDung)
             {
                 B02BCTC_Sync b02BCTC_Sync = new B02BCTC_Sync(oMisaInfo, urlAPI, accessToken.access_token, _configuration, _mapper);
-                msg = await b02BCTC_Sync.SendDataToAPI();
-                if (msg.Length > 0) WriteLogErr(msg);
+                result = await b02BCTC_Sync.SendDataToAPI();
+                if (result.IsFailed)
+                {
+                    IEnumerable<Reason> reasons = result.Reasons;
+                    WriteLogErr(reasons.FirstOrDefault().Message);
+                    return;
+                }
+
+                successes = result.Successes;
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
@@ -136,7 +143,7 @@ namespace BT_SendDataMISA
             };
 
             HttpClientPost httpClientPost = new HttpClientPost();
-            return await httpClientPost.SendsRequestWithToken(apiGetToken, "", tokenParam);
+            return await httpClientPost.SendsRequest(apiGetToken, "", tokenParam);
         }
 
         private async Task<Result> GetSysScheduler(string urlAPI, string token)
@@ -145,7 +152,7 @@ namespace BT_SendDataMISA
             if (string.IsNullOrEmpty(api)) return Result.Fail("Không tìm thấy cấu hình ApiName:GetScheduler trong file appsettings.json");
 
             HttpClientPost httpClientPost = new HttpClientPost();
-            return await httpClientPost.SendsRequestWithToken(urlAPI + api, token);
+            return await httpClientPost.SendsRequest(urlAPI + api, token);
         }
 
         private string DoBeginProcessSync()

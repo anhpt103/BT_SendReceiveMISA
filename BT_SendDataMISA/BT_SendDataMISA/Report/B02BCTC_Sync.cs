@@ -5,7 +5,9 @@ using BT_SendDataMISA.HttpClientAPI;
 using BT_SendDataMISA.Models;
 using BT_SendDataMISA.Models.Report;
 using BT_SendDataMISA.Models.Report.B02;
+using FluentResults;
 using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -49,7 +51,10 @@ namespace BT_SendDataMISA.Report
 
                     if (outItem != null && (oList != null && oList.Count > 0))
                     {
+                        Guid RefID = outItem.RefID;
                         outItem = _mapper.Map<ReportHeader>(_dbMisaInfo);
+
+                        outItem.RefID = RefID;
                         outItem.ReportID = "B02BCTC";
                         outItem.ReportPeriod = eachMonth.Month;
                         outItem.ReportYear = eachMonth.Year;
@@ -75,18 +80,16 @@ namespace BT_SendDataMISA.Report
             return "";
         }
 
-        public async Task<string> SendDataToAPI()
+        public async Task<Result> SendDataToAPI()
         {
             string msg = GetDataReport(out List<B02BCQT> oListB02BCQT);
-            if (msg.Length > 0) return msg;
+            if (msg.Length > 0) return Result.Fail(msg);
 
             string api = _configuration.GetValue<string>("ApiName:B02BCQT_Receive");
-            if (string.IsNullOrEmpty(api)) return "Không tìm thấy cấu hình ApiName:B02BCQT_Receive trong file appsettings.json";
+            if (string.IsNullOrEmpty(api)) return Result.Fail("Không tìm thấy cấu hình ApiName:B02BCQT_Receive trong file appsettings.json");
 
             HttpClientPost httpClientPost = new HttpClientPost();
-            await httpClientPost.SendsRequestWithToken(_urlAPI + api, _token, oListB02BCQT);
-
-            return "";
+            return await httpClientPost.SendsRequest(_urlAPI + api, _token, oListB02BCQT);
         }
     }
 }

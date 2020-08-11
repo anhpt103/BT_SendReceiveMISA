@@ -8,7 +8,7 @@ namespace BT_SendDataMISA
     {
         public MappingProfile()
         {
-            CreateMap<DbMisaInfo, ReportHeader>().IgnoreAllPropertiesWithAnInaccessibleSetter();
+            CreateMap<DbMisaInfo, ReportHeader>();
         }
     }
 }
