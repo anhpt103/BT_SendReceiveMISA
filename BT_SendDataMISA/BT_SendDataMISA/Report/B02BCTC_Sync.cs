@@ -30,9 +30,9 @@ namespace BT_SendDataMISA.Report
             _mapper = mapper;
         }
 
-        private string GetDataReport(out List<B02BCQT> oListB02BCQT)
+        private string GetDataReport(out List<B02BCTCModel> oListB02BCQT)
         {
-            oListB02BCQT = new List<B02BCQT>();
+            oListB02BCQT = new List<B02BCTCModel>();
             var listStartEndDateOYear = CommonFunction.GetStartEndDateAllMonthInYear();
             if (listStartEndDateOYear.Count > 0)
             {
@@ -46,18 +46,20 @@ namespace BT_SendDataMISA.Report
                     string pMasterID = null;
                     string @pIsPrintMonth13 = null;
 
-                    string msg = Exec.MultipleResult("Proc_FIR_Get02_BCTC_ExportForX1", new { pStartDate, pFromDate, pToDate, pBudgetChapter, pSummaryBudgetChapter, pMasterID, @pIsPrintMonth13 }, out ReportHeader outItem, out List<B02BCQTDetailItem> oList);
+                    string msg = Exec.MultipleResult("Proc_FIR_Get02_BCTC_ExportForX1", new { pStartDate, pFromDate, pToDate, pBudgetChapter, pSummaryBudgetChapter, pMasterID, @pIsPrintMonth13 }, out ReportHeader outItem, out List<B02BCTCDetailItem> oList);
                     if (msg.Length > 0) return Msg.Exec_Proc_FIR_Get02_BCTC_ExportForX1_Err;
 
                     if (outItem != null && (oList != null && oList.Count > 0))
                     {
                         Guid RefID = outItem.RefID;
-                        outItem = _mapper.Map<ReportHeader>(_dbMisaInfo);
+                        int BudgetChapterCode = outItem.BudgetChapterCode;
 
+                        outItem = _mapper.Map<ReportHeader>(_dbMisaInfo);
                         outItem.RefID = RefID;
                         outItem.ReportID = "B02BCTC";
                         outItem.ReportPeriod = eachMonth.Month;
                         outItem.ReportYear = eachMonth.Year;
+                        outItem.BudgetChapterCode = BudgetChapterCode;
 
                         foreach (var record in oList)
                         {
@@ -65,13 +67,13 @@ namespace BT_SendDataMISA.Report
                             record.BudgetSubKindItemID = _dbMisaInfo.BudgetSubKindItemID;
                         }
 
-                        B02BCQT b02BCQT = new B02BCQT
+                        B02BCTCModel b02BCTC = new B02BCTCModel
                         {
                             ReportHeader = outItem,
                             B02BCTCDetail = oList
                         };
 
-                        oListB02BCQT.Add(b02BCQT);
+                        oListB02BCQT.Add(b02BCTC);
                     }
                 }
             }
@@ -82,14 +84,14 @@ namespace BT_SendDataMISA.Report
 
         public async Task<Result> SendDataToAPI()
         {
-            string msg = GetDataReport(out List<B02BCQT> oListB02BCQT);
+            string msg = GetDataReport(out List<B02BCTCModel> oListB02BCTC);
             if (msg.Length > 0) return Result.Fail(msg);
 
-            string api = _configuration.GetValue<string>("ApiName:B02BCQT_Receive");
-            if (string.IsNullOrEmpty(api)) return Result.Fail("Không tìm thấy cấu hình ApiName:B02BCQT_Receive trong file appsettings.json");
+            string api = _configuration.GetValue<string>("ApiName:B02BCTC_Receive");
+            if (string.IsNullOrEmpty(api)) return Result.Fail("Không tìm thấy cấu hình ApiName:B02BCTC_Receive trong file appsettings.json");
 
             HttpClientPost httpClientPost = new HttpClientPost();
-            return await httpClientPost.SendsRequest(_urlAPI + api, _token, oListB02BCQT);
+            return await httpClientPost.SendsRequest(_urlAPI + api, _token, oListB02BCTC);
         }
     }
 }

@@ -6,7 +6,8 @@ namespace BT_SendDataMISA.Models.Report
     {
         public Guid RefID { get; set; }
         public string AccountSystem { get; set; }
-        public int? BudgetChapterID { get; set; }
+        public int BudgetChapterID { get; set; }
+        public int BudgetChapterCode { get; set; }
         public string CompanyID { get; set; }
         public string CompanyName { get; set; }
         public string ExportDate { get; set; }

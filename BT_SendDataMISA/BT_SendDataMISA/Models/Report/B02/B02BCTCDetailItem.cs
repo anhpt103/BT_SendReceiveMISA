@@ -2,7 +2,7 @@
 
 namespace BT_SendDataMISA.Models.Report.B02
 {
-    public class B02BCQTDetailItem
+    public class B02BCTCDetailItem
     {
         public Guid RefID { get; set; }
         public int ReportItemIndex { get; set; }
@@ -13,7 +13,7 @@ namespace BT_SendDataMISA.Models.Report.B02
         public decimal CurrentPeriodAmount { get; set; }
         public decimal PreviousPeriodAmount { get; set; }
 
-        public int BudgetKindItemID { get; set; }
-        public int BudgetSubKindItemID { get; set; }
+        public string BudgetKindItemID { get; set; }
+        public string BudgetSubKindItemID { get; set; }
     }
 }

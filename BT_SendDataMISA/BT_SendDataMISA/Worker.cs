@@ -94,21 +94,23 @@ namespace BT_SendDataMISA
             var application = sysScheduler.FirstOrDefault(x => x.TEN_UNGDUNG == TenUngDung);
             if (application != null && application.TEN_UNGDUNG == TenUngDung)
             {
-                B02BCTC_Sync b02BCTC_Sync = new B02BCTC_Sync(oMisaInfo, urlAPI, accessToken.access_token, _configuration, _mapper);
-                result = await b02BCTC_Sync.SendDataToAPI();
-                if (result.IsFailed)
-                {
-                    IEnumerable<Reason> reasons = result.Reasons;
-                    WriteLogErr(reasons.FirstOrDefault().Message);
-                    return;
-                }
-
-                successes = result.Successes;
-
                 while (!stoppingToken.IsCancellationRequested)
                 {
+                    B02BCTC_Sync b02BCTC_Sync = new B02BCTC_Sync(oMisaInfo, urlAPI, accessToken.access_token, _configuration, _mapper);
+                    result = await b02BCTC_Sync.SendDataToAPI();
+                    if (result.IsFailed)
+                    {
+                        IEnumerable<Reason> reasons = result.Reasons;
+                        WriteLogErr(reasons.FirstOrDefault().Message);
+                        return;
+                    }
 
-                    await Task.Delay(application.TIME_PERIOD, stoppingToken);
+                    successes = result.Successes;
+                    Convertor.StringToObject(successes.FirstOrDefault().Message, out ResponseObj resObj);
+                    if (msg.Length > 0) WriteLogErr(Msg.Convert_ResponseObj_Err);
+                    WriteLogErr(string.IsNullOrEmpty(resObj.Message) ? "Đồng bộ thành công Dữ liệu báo cáo" : resObj.Message);
+
+                    await Task.Delay((60000 * application.TIME_PERIOD), stoppingToken);
                 }
             }
         }

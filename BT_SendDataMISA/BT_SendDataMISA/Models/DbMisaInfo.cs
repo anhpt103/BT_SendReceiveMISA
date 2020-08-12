@@ -10,9 +10,9 @@ namespace BT_SendDataMISA.Models
         public int ParticularID { get; set; }
         public string ProductID { get; set; }
         public string Version { get; set; }
-        public int BudgetChapterID { get; set; }
-        public int BudgetKindItemID { get; set; }
-        public int BudgetSubKindItemID { get; set; }
+        public string BudgetChapterID { get; set; }
+        public string BudgetKindItemID { get; set; }
+        public string BudgetSubKindItemID { get; set; }
         public string StartDate { get; set; }
         public string AccountSystem { get; set; }
 
