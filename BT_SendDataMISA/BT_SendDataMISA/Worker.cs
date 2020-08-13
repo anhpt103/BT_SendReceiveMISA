@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,75 +45,155 @@ namespace BT_SendDataMISA
         }
 
         StringBuilder sb = new StringBuilder(string.Format(@"Gửi dữ liệu Start: {0}", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")));
-        private StringBuilder WriteLogErr(string msg)
+        private StringBuilder WriteLog(string msg)
         {
             _logger.LogError(msg);
             sb.Append(msg);
             return sb;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        private async Task<ParamSetting> GetParamSettingFromServer(string urlAPI)
         {
-            TenUngDung = _configuration.GetValue<string>("exeConfigFile:TenUngDung");
-            if (string.IsNullOrEmpty(TenUngDung)) { WriteLogErr(Msg.TenUngDung_AppST_404); return; }
-
-            string urlAPI = _configuration.GetValue<string>("WebServer:UrlAPI");
-            if (string.IsNullOrEmpty(urlAPI)) { WriteLogErr(Msg.UrlAPI_AppST_404); return; }
-
             Result result = await GetAccessTokenAsync();
             if (result.IsFailed)
             {
                 IEnumerable<Reason> reasons = result.Reasons;
-                WriteLogErr(reasons.FirstOrDefault().Message);
-                return;
+                WriteLog(reasons.FirstOrDefault().Message);
+                return null;
             }
 
             IEnumerable<Success> successes = result.Successes;
             string msg = Convertor.StringToObject(successes.FirstOrDefault().Message, out TokenInfo accessToken);
-            if (msg.Length > 0) WriteLogErr(Msg.Convert_TokenInfo_Err);
-
-            msg = DoBeginProcessSync();
-            if (msg.Length > 0) WriteLogErr(msg);
+            if (msg.Length > 0)
+            {
+                WriteLog(Msg.Convert_TokenInfo_Err);
+                return null;
+            }
 
             // Get SysScheduler From Root Database
             result = await GetSysScheduler(urlAPI, accessToken.access_token);
             if (result.IsFailed)
             {
                 IEnumerable<Reason> reasons = result.Reasons;
-                WriteLogErr(reasons.FirstOrDefault().Message);
-                return;
+                WriteLog(reasons.FirstOrDefault().Message);
+                return null;
             }
 
             successes = result.Successes;
             Convertor.StringToObject(successes.FirstOrDefault().Message, out List<SysScheduler> sysScheduler);
-            if (msg.Length > 0) WriteLogErr(Msg.Convert_Lst_SysScheduler_Err);
+            if (msg.Length > 0)
+            {
+                WriteLog(Msg.Convert_Lst_SysScheduler_Err);
+                return null;
+            }
+
+            ParamSetting paramSetting = new ParamSetting
+            {
+                TokenInfos = accessToken,
+                ListSysScheduler = sysScheduler
+            };
+
+            return paramSetting;
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            TenUngDung = _configuration.GetValue<string>("exeConfigFile:TenUngDung");
+            if (string.IsNullOrEmpty(TenUngDung)) { WriteLog(Msg.TenUngDung_AppST_404); return; }
+
+            string urlAPI = _configuration.GetValue<string>("WebServer:UrlAPI");
+            if (string.IsNullOrEmpty(urlAPI)) { WriteLog(Msg.UrlAPI_AppST_404); return; }
+
+            string msg = DoBeginProcessSync();
+            if (msg.Length > 0) WriteLog(msg);
 
             // Get DBInfo Misa
             msg = CommonFunction.GetDBInfoMisa(out DbMisaInfo oMisaInfo);
-            if (msg.Length > 0) WriteLogErr(msg);
+            if (msg.Length > 0) WriteLog(msg);
 
-            var application = sysScheduler.FirstOrDefault(x => x.TEN_UNGDUNG == TenUngDung);
-            if (application != null && application.TEN_UNGDUNG == TenUngDung)
+            while (!stoppingToken.IsCancellationRequested)
             {
-                while (!stoppingToken.IsCancellationRequested)
+                ParamSetting paramSetting = await GetParamSettingFromServer(urlAPI);
+                if (paramSetting == null) WriteLog("Lỗi GetParamSettingFromServer");
+
+                var application = paramSetting.ListSysScheduler.FirstOrDefault(x => x.TEN_UNGDUNG == TenUngDung);
+                if (application != null && application.TEN_UNGDUNG == TenUngDung)
                 {
-                    B02BCTC_Sync b02BCTC_Sync = new B02BCTC_Sync(oMisaInfo, urlAPI, accessToken.access_token, _configuration, _mapper);
-                    result = await b02BCTC_Sync.SendDataToAPI();
-                    if (result.IsFailed)
-                    {
-                        IEnumerable<Reason> reasons = result.Reasons;
-                        WriteLogErr(reasons.FirstOrDefault().Message);
-                        return;
-                    }
-
-                    successes = result.Successes;
-                    Convertor.StringToObject(successes.FirstOrDefault().Message, out ResponseObj resObj);
-                    if (msg.Length > 0) WriteLogErr(Msg.Convert_ResponseObj_Err);
-                    WriteLogErr(string.IsNullOrEmpty(resObj.Message) ? "Đồng bộ thành công Dữ liệu báo cáo" : resObj.Message);
-
-                    await Task.Delay((60000 * application.TIME_PERIOD), stoppingToken);
+                    DoWork(oMisaInfo, urlAPI, paramSetting.TokenInfos.access_token);
                 }
+
+                await Task.Delay((60000 * application.TIME_PERIOD), stoppingToken);
             }
+        }
+
+        private void DoWork(DbMisaInfo oMisaInfo, string urlAPI, string access_token)
+        {
+            DoWorkB01BCTC(oMisaInfo, urlAPI, access_token);
+            WriteLog("-------------------------------------");
+            DoWorkB02BCTC(oMisaInfo, urlAPI, access_token);
+            WriteLog("-------------------------------------");
+            DoWorkB03bBCTC(oMisaInfo, urlAPI, access_token);
+            WriteLog("-------------------------------------");
+        }
+
+        private async void DoWorkB01BCTC(DbMisaInfo oMisaInfo, string urlAPI, string access_token)
+        {
+            WriteLog("--> Bắt đầu gửi dữ liệu báo cáo B01BCTC <--");
+            B01BCTC_Sync b01BCTC_Sync = new B01BCTC_Sync(oMisaInfo, urlAPI, access_token, _configuration, _mapper);
+            Result result = await b01BCTC_Sync.SendDataToAPI();
+            if (result.IsFailed)
+            {
+                IEnumerable<Reason> reasons = result.Reasons;
+                WriteLog("Xảy ra lỗi gửi dữ liệu báo cáo B01BCTC:");
+                WriteLog(reasons.FirstOrDefault().Message);
+                return;
+            }
+
+            IEnumerable<Success> successes = result.Successes;
+            string msg = Convertor.StringToObject(successes.FirstOrDefault().Message, out ResponseObj resObj);
+            if (msg.Length > 0) WriteLog(Msg.Convert_ResponseObj_Err);
+            WriteLog(string.IsNullOrEmpty(resObj.Message) ? "Gửi dữ liệu thành công báo cáo B01BCTC" : resObj.Message);
+            WriteLog("--> Kết thúc gửi dữ liệu báo cáo B01BCTC <--");
+        }
+
+        private async void DoWorkB02BCTC(DbMisaInfo oMisaInfo, string urlAPI, string access_token)
+        {
+            WriteLog("--> Bắt đầu gửi dữ liệu báo cáo B02BCTC <--");
+            B02BCTC_Sync b02BCTC_Sync = new B02BCTC_Sync(oMisaInfo, urlAPI, access_token, _configuration, _mapper);
+            Result result = await b02BCTC_Sync.SendDataToAPI();
+            if (result.IsFailed)
+            {
+                IEnumerable<Reason> reasons = result.Reasons;
+                WriteLog("Xảy ra lỗi gửi dữ liệu báo cáo B02BCTC:");
+                WriteLog(reasons.FirstOrDefault().Message);
+                return;
+            }
+
+            IEnumerable<Success> successes = result.Successes;
+            string msg = Convertor.StringToObject(successes.FirstOrDefault().Message, out ResponseObj resObj);
+            if (msg.Length > 0) WriteLog(Msg.Convert_ResponseObj_Err);
+            WriteLog(string.IsNullOrEmpty(resObj.Message) ? "Gửi dữ liệu thành công báo cáo B02BCTC" : resObj.Message);
+            WriteLog("--> Kết thúc gửi dữ liệu báo cáo B02BCTC <--");
+        }
+
+        private async void DoWorkB03bBCTC(DbMisaInfo oMisaInfo, string urlAPI, string access_token)
+        {
+            WriteLog("--> Bắt đầu gửi dữ liệu báo cáo B03bBCTC <--");
+            B03bBCTC_Sync b03bBCTC_Sync = new B03bBCTC_Sync(oMisaInfo, urlAPI, access_token, _configuration, _mapper);
+            Result result = await b03bBCTC_Sync.SendDataToAPI();
+            if (result.IsFailed)
+            {
+                IEnumerable<Reason> reasons = result.Reasons;
+                WriteLog("Xảy ra lỗi gửi dữ liệu báo cáo B03bBCTC:");
+                WriteLog(reasons.FirstOrDefault().Message);
+                return;
+            }
+
+            IEnumerable<Success> successes = result.Successes;
+            string msg = Convertor.StringToObject(successes.FirstOrDefault().Message, out ResponseObj resObj);
+            if (msg.Length > 0) WriteLog(Msg.Convert_ResponseObj_Err);
+            WriteLog(string.IsNullOrEmpty(resObj.Message) ? "Gửi dữ liệu thành công báo cáo B03bBCTC" : resObj.Message);
+            WriteLog("--> Kết thúc gửi dữ liệu báo cáo B03bBCTC <--");
         }
 
         private async Task<Result> GetAccessTokenAsync()
