@@ -4,7 +4,7 @@ using BT_SendDataMISA.Function;
 using BT_SendDataMISA.HttpClientAPI;
 using BT_SendDataMISA.Models;
 using BT_SendDataMISA.Models.Report;
-using BT_SendDataMISA.Models.Report.B02;
+using BT_SendDataMISA.Models.Report.B04;
 using FluentResults;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace BT_SendDataMISA.Report
 {
-    public class B02BCTC_Sync
+    public class B04BCTC_Sync
     {
         private DbMisaInfo _dbMisaInfo;
         private string _urlAPI;
@@ -21,7 +21,7 @@ namespace BT_SendDataMISA.Report
         public IConfiguration _configuration { get; }
         private readonly IMapper _mapper;
 
-        public B02BCTC_Sync(DbMisaInfo dbMisaInfo, string urlAPI, string token, IConfiguration configuration, IMapper mapper)
+        public B04BCTC_Sync(DbMisaInfo dbMisaInfo, string urlAPI, string token, IConfiguration configuration, IMapper mapper)
         {
             _dbMisaInfo = dbMisaInfo;
             _urlAPI = urlAPI;
@@ -30,9 +30,9 @@ namespace BT_SendDataMISA.Report
             _mapper = mapper;
         }
 
-        private string GetDataReport(out List<B02BCTCModel> oListB02BCQT)
+        private string GetDataReport(out List<B04BCTCModel> oListB04BCQT)
         {
-            oListB02BCQT = new List<B02BCTCModel>();
+            oListB04BCQT = new List<B04BCTCModel>();
             var listStartEndDateOYear = CommonFunction.GetStartEndDateAllMonthInYear();
             if (listStartEndDateOYear.Count > 0)
             {
@@ -43,10 +43,12 @@ namespace BT_SendDataMISA.Report
                     string pToDate = eachMonth.ToDate;
                     string pBudgetChapter = null;
                     int pSummaryBudgetChapter = 0;
+                    string pIsGetFromGLFIRSetting = null;
                     string pMasterID = null;
                     string pIsPrintMonth13 = null;
+                    string pIsPrintAllYearAndMonth13 = null;
 
-                    string msg = Exec.MultipleResult("Proc_FIR_Get02_BCTC_ExportForX1", new { pStartDate, pFromDate, pToDate, pBudgetChapter, pSummaryBudgetChapter, pMasterID, pIsPrintMonth13 }, out ReportHeader outItem, out List<B02BCTCDetailItem> oList);
+                    string msg = Exec.MultipleResult("Proc_FIR_Get04BCTC_ExportForX1", new { pStartDate, pFromDate, pToDate, pBudgetChapter, pSummaryBudgetChapter, pIsGetFromGLFIRSetting, pMasterID, pIsPrintMonth13, pIsPrintAllYearAndMonth13 }, out ReportHeader outItem, out List<B04BCTCDetailItem> oList);
                     if (msg.Length > 0) return Msg.Exec_Proc_FIR_Get02_BCTC_ExportForX1_Err;
 
                     if (outItem != null && (oList != null && oList.Count > 0))
@@ -56,36 +58,36 @@ namespace BT_SendDataMISA.Report
 
                         outItem = _mapper.Map<ReportHeader>(_dbMisaInfo);
                         outItem.RefID = RefID;
-                        outItem.ReportID = "B02BCTC";
+                        outItem.ReportID = "B04BCTC";
                         outItem.ReportPeriod = eachMonth.Month;
                         outItem.ReportYear = eachMonth.Year;
                         outItem.BudgetChapterCode = BudgetChapterCode;
 
-                        B02BCTCModel b02BCTC = new B02BCTCModel
+                        B04BCTCModel b04BCTC = new B04BCTCModel
                         {
                             ReportHeader = outItem,
-                            B02BCTCDetail = oList
+                            B04BCTCDetail = oList
                         };
 
-                        oListB02BCQT.Add(b02BCTC);
+                        oListB04BCQT.Add(b04BCTC);
                     }
                 }
             }
-            if (oListB02BCQT.Count == 0) return "Không có dữ liệu báo cáo";
+            if (oListB04BCQT.Count == 0) return "Không có dữ liệu báo cáo";
 
             return "";
         }
 
         public async Task<Result> SendDataToAPI()
         {
-            string msg = GetDataReport(out List<B02BCTCModel> oListB02BCTC);
+            string msg = GetDataReport(out List<B04BCTCModel> oListB04BCTC);
             if (msg.Length > 0) return Result.Fail(msg);
 
-            string api = _configuration.GetValue<string>("ApiName:B02BCTC_Receive");
-            if (string.IsNullOrEmpty(api)) return Result.Fail("Không tìm thấy cấu hình ApiName:B02BCTC_Receive trong file appsettings.json");
+            string api = _configuration.GetValue<string>("ApiName:B04BCTC_Receive");
+            if (string.IsNullOrEmpty(api)) return Result.Fail("Không tìm thấy cấu hình ApiName:B04BCTC_Receive trong file appsettings.json");
 
             HttpClientPost httpClientPost = new HttpClientPost();
-            return await httpClientPost.SendsRequest(_urlAPI + api, _token, oListB02BCTC);
+            return await httpClientPost.SendsRequest(_urlAPI + api, _token, oListB04BCTC);
         }
     }
 }

@@ -60,12 +60,6 @@ namespace BT_SendDataMISA.Report
                         outItem.ReportYear = eachMonth.Year;
                         outItem.BudgetChapterCode = BudgetChapterCode;
 
-                        foreach (var record in oList)
-                        {
-                            record.BudgetKindItemID = _dbMisaInfo.BudgetKindItemID;
-                            record.BudgetSubKindItemID = _dbMisaInfo.BudgetSubKindItemID;
-                        }
-
                         B03bBCTCModel b02BCTC = new B03bBCTCModel
                         {
                             ReportHeader = outItem,
