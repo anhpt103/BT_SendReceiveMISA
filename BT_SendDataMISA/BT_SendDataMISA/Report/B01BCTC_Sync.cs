@@ -45,7 +45,7 @@ namespace BT_SendDataMISA.Report
                     int pSummaryBudgetChapter = 0;
 
                     string msg = Exec.MultipleResult("Proc_FIR_Get01_BCTC_ExportForX1", new { pStartDate, pFromDate, pToDate, pBudgetChapter, pSummaryBudgetChapter }, out ReportHeader outItem, out List<B01BCTCDetailItem> oList);
-                    if (msg.Length > 0) return Msg.Exec_Proc_FIR_Get02_BCTC_ExportForX1_Err;
+                    if (msg.Length > 0) return Msg.Exec_Proc_FIR_Get01_BCTC_ExportForX1_Err;
 
                     if (outItem != null && (oList != null && oList.Count > 0))
                     {

@@ -46,7 +46,7 @@ namespace BT_SendDataMISA.Report
                     string pMasterID = null;
 
                     string msg = Exec.MultipleResult("Proc_FIR_Get03b_BCTC_ExportForX1", new { pStartDate, pFromDate, pToDate, pBudgetChapter, pSummaryBudgetChapter, pMasterID }, out ReportHeader outItem, out List<B03bBCTCDetailItem> oList);
-                    if (msg.Length > 0) return Msg.Exec_Proc_FIR_Get02_BCTC_ExportForX1_Err;
+                    if (msg.Length > 0) return Msg.Exec_Proc_FIR_Get03b_BCTC_ExportForX1_Err;
 
                     if (outItem != null && (oList != null && oList.Count > 0))
                     {
@@ -60,13 +60,13 @@ namespace BT_SendDataMISA.Report
                         outItem.ReportYear = eachMonth.Year;
                         outItem.BudgetChapterCode = BudgetChapterCode;
 
-                        B03bBCTCModel b02BCTC = new B03bBCTCModel
+                        B03bBCTCModel b03bBCTC = new B03bBCTCModel
                         {
                             ReportHeader = outItem,
                             B03bBCTCDetail = oList
                         };
 
-                        oListB02BCQT.Add(b02BCTC);
+                        oListB02BCQT.Add(b03bBCTC);
                     }
                 }
             }

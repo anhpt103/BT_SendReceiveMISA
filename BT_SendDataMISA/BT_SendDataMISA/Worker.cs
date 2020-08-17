@@ -141,6 +141,12 @@ namespace BT_SendDataMISA
             WriteLog("-------------------------------------");
             DoWorkB04TT90(oMisaInfo, urlAPI, access_token);
             WriteLog("-------------------------------------");
+            DoWorkF01_01BCQT(oMisaInfo, urlAPI, access_token);
+            WriteLog("-------------------------------------");
+            DoWorkF01_02_P1BCQT(oMisaInfo, urlAPI, access_token);
+            WriteLog("-------------------------------------");
+            DoWorkF01_02_P2BCQT(oMisaInfo, urlAPI, access_token);
+            WriteLog("-------------------------------------");
         }
 
         private async void DoWorkB01BCTC(DbMisaInfo oMisaInfo, string urlAPI, string access_token)
@@ -242,6 +248,7 @@ namespace BT_SendDataMISA
             WriteLog(string.IsNullOrEmpty(resObj.Message) ? "Gửi dữ liệu thành công báo cáo B01BCQT" : resObj.Message);
             WriteLog("--> Kết thúc gửi dữ liệu báo cáo B01BCQT <--");
         }
+
         private async void DoWorkB03TT90(DbMisaInfo oMisaInfo, string urlAPI, string access_token)
         {
             WriteLog("--> Bắt đầu gửi dữ liệu báo cáo B03TT90 <--");
@@ -280,6 +287,66 @@ namespace BT_SendDataMISA
             if (msg.Length > 0) WriteLog(Msg.Convert_ResponseObj_Err);
             WriteLog(string.IsNullOrEmpty(resObj.Message) ? "Gửi dữ liệu thành công báo cáo B04TT90" : resObj.Message);
             WriteLog("--> Kết thúc gửi dữ liệu báo cáo B04TT90 <--");
+        }
+
+        private async void DoWorkF01_01BCQT(DbMisaInfo oMisaInfo, string urlAPI, string access_token)
+        {
+            WriteLog("--> Bắt đầu gửi dữ liệu báo cáo F01_01BCQT <--");
+            F01_01BCQT_Sync f01_01BCQT = new F01_01BCQT_Sync(oMisaInfo, urlAPI, access_token, _configuration, _mapper);
+            Result result = await f01_01BCQT.SendDataToAPI();
+            if (result.IsFailed)
+            {
+                IEnumerable<Reason> reasons = result.Reasons;
+                WriteLog("Xảy ra lỗi gửi dữ liệu báo cáo F01_01BCQT:");
+                WriteLog(reasons.FirstOrDefault().Message);
+                return;
+            }
+
+            IEnumerable<Success> successes = result.Successes;
+            string msg = Convertor.StringToObject(successes.FirstOrDefault().Message, out ResponseObj resObj);
+            if (msg.Length > 0) WriteLog(Msg.Convert_ResponseObj_Err);
+            WriteLog(string.IsNullOrEmpty(resObj.Message) ? "Gửi dữ liệu thành công báo cáo F01_01BCQT" : resObj.Message);
+            WriteLog("--> Kết thúc gửi dữ liệu báo cáo F01_01BCQT <--");
+        }
+
+        private async void DoWorkF01_02_P1BCQT(DbMisaInfo oMisaInfo, string urlAPI, string access_token)
+        {
+            WriteLog("--> Bắt đầu gửi dữ liệu báo cáo F01_02_P1BCQT <--");
+            F01_02_P1BCQT_Sync f01_02_P1BCQT = new F01_02_P1BCQT_Sync(oMisaInfo, urlAPI, access_token, _configuration, _mapper);
+            Result result = await f01_02_P1BCQT.SendDataToAPI();
+            if (result.IsFailed)
+            {
+                IEnumerable<Reason> reasons = result.Reasons;
+                WriteLog("Xảy ra lỗi gửi dữ liệu báo cáo F01_02_P1BCQT:");
+                WriteLog(reasons.FirstOrDefault().Message);
+                return;
+            }
+
+            IEnumerable<Success> successes = result.Successes;
+            string msg = Convertor.StringToObject(successes.FirstOrDefault().Message, out ResponseObj resObj);
+            if (msg.Length > 0) WriteLog(Msg.Convert_ResponseObj_Err);
+            WriteLog(string.IsNullOrEmpty(resObj.Message) ? "Gửi dữ liệu thành công báo cáo F01_02_P1BCQT" : resObj.Message);
+            WriteLog("--> Kết thúc gửi dữ liệu báo cáo F01_02_P1BCQT <--");
+        }
+
+        private async void DoWorkF01_02_P2BCQT(DbMisaInfo oMisaInfo, string urlAPI, string access_token)
+        {
+            WriteLog("--> Bắt đầu gửi dữ liệu báo cáo F01_02_P2BCQT <--");
+            F01_02_P2BCQT_Sync f01_02_P2BCQT = new F01_02_P2BCQT_Sync(oMisaInfo, urlAPI, access_token, _configuration, _mapper);
+            Result result = await f01_02_P2BCQT.SendDataToAPI();
+            if (result.IsFailed)
+            {
+                IEnumerable<Reason> reasons = result.Reasons;
+                WriteLog("Xảy ra lỗi gửi dữ liệu báo cáo F01_02_P2BCQT:");
+                WriteLog(reasons.FirstOrDefault().Message);
+                return;
+            }
+
+            IEnumerable<Success> successes = result.Successes;
+            string msg = Convertor.StringToObject(successes.FirstOrDefault().Message, out ResponseObj resObj);
+            if (msg.Length > 0) WriteLog(Msg.Convert_ResponseObj_Err);
+            WriteLog(string.IsNullOrEmpty(resObj.Message) ? "Gửi dữ liệu thành công báo cáo F01_02_P2BCQT" : resObj.Message);
+            WriteLog("--> Kết thúc gửi dữ liệu báo cáo F01_02_P2BCQT <--");
         }
 
         private async Task<Result> GetAccessTokenAsync()

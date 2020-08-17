@@ -1389,8 +1389,8 @@ namespace BT_SendDataMISA.Common
             msg = ExecStoreMultipleResult(conn, transac, storeName, htParams, QueryTypeGetDataTable, false, null, null, out outValues, out outValueTwice);
             if (msg.Length > 0) return msg;
 
-            if (outValues.Count == 0) return "Error: No out value @ExecStore with spName " + storeName;
-            if (outValueTwice.Count == 0) return "Error: No out value @ExecStore with spName " + storeName;
+            if (outValues.Count == 0) return "Error: No out value @ExecStoreMultipleResult with spName " + storeName;
+            if (outValueTwice.Count == 0) return "Error: No out value @ExecStoreMultipleResult with spName " + storeName;
 
             dt = outValues[0] as DataTable; // cast về DataTable. Trả về null nếu không cast được
             dtTwice = outValueTwice[0] as DataTable; // cast về DataTable. Trả về null nếu không cast được
@@ -1423,7 +1423,7 @@ namespace BT_SendDataMISA.Common
             outValues = null;
             outValueTwice = null;
 
-            if (string.IsNullOrWhiteSpace(strConnect)) return "Error: Connection string is null or empty @ExecStore";
+            if (string.IsNullOrWhiteSpace(strConnect)) return "Error: Connection string is null or empty @ExecStoreMultipleResult";
 
             DbConnection conn = GetDbConnection(strConnect);
             var msg = ExecStoreMultipleResult(conn, null, storeName, htParams, queryType, false, null, outVarNames, out outValues, out outValueTwice);
@@ -1551,6 +1551,284 @@ namespace BT_SendDataMISA.Common
                         }
                         break;
                     default: msg = "Error: QueryType is unknown @ExecStoreMultipleResult"; break;
+                }
+            }
+            catch (Exception ex)
+            {
+                msg = "StoreName EXEC " + storeName + " " + sParam + " error: " + ex.ToString();
+                if (transac == null && conn != null && conn.State != ConnectionState.Closed) conn.Close();
+            }
+            finally
+            {
+                if (!isAsync) // Nếu không phải async thì close SQL connection. Nếu là async thì connection sẽ được close ở hàm callback async.      
+                    if (transac == null && conn != null && conn.State != ConnectionState.Closed) conn.Close();
+            }
+            cmdToExecute?.Dispose();
+
+            if (isOutRowsAffected)
+            {
+                outValues = new List<object>();
+                outValues.Add(rowsAffected);
+            }
+
+            return msg;
+        }
+
+        /* ThirdOutputResult */
+        static public string ThirdOutputResult<T, TL, TLL, TLLL>(string storeName, T parameters, out TL oneItem, out List<TLL> twiceItem, out List<TLLL> thirdItem) where T : class where TL : class where TLL : class where TLLL : class
+        {
+            return ThirdOutputResult(ConnectionString, storeName, parameters, out oneItem, out twiceItem, out thirdItem);
+        }
+
+        static public string ThirdOutputResult<T, TL, TLL, TLLL>(string strConnect, string storeName, T parameters, out TL oneItem, out List<TLL> twiceItem, out List<TLLL> thirdItem) where T : class where TL : class where TLL : class where TLLL : class
+        {
+            Hashtable htParams = new Hashtable();
+            AddParams(strConnect, ref htParams, parameters);
+
+            return ThirdOutputResult(null, strConnect, storeName, htParams, out oneItem, out twiceItem, out thirdItem);
+        }
+
+        static private string ThirdOutputResult<T, TLL, TLLL>(Exec dbm, string strConnect, string storeName, Hashtable htParams, out T oneItem, out List<TLL> twiceItem, out List<TLLL> thirdItem)
+        {
+            oneItem = default(T);
+            twiceItem = default(List<TLL>);
+            thirdItem = default(List<TLLL>);
+
+            List<T> list = null;
+            List<TLL> listTLL = null;
+            List<TLLL> listTLLL = null;
+
+            string msg = GetThirdOutputResult(dbm, strConnect, storeName, htParams, out list, out listTLL, out listTLLL);
+            if (msg.Length > 0) return msg;
+
+            if (list == null) return "Error: list is null @Exec.ThirdOutputResult";
+            if (list.Count == 0) return "";
+
+            if (listTLL == null) return "Error: listTLL is null @Exec.ThirdOutputResult";
+            if (listTLL.Count == 0) return "";
+
+            if (listTLLL == null) return "Error: listTLLL is null @Exec.ThirdOutputResult";
+            if (listTLLL.Count == 0) return "";
+
+            oneItem = list[0];
+            twiceItem = listTLL;
+            thirdItem = listTLLL;
+
+            return msg;
+        }
+
+        static private string GetThirdOutputResult<T, TLL, TLLL>(Exec dbm, string strConnect, string storeName, Hashtable htParams, out List<T> list, out List<TLL> listTLL, out List<TLLL> listTLLL)
+        {
+            string msg = "";
+
+            list = null;
+            listTLL = null;
+            listTLLL = null;
+
+            DataTable dt = null;
+            DataTable twicedt = null;
+            DataTable thirddt = null;
+
+            if (dbm == null) msg = ExecStoreThirdOutputResult(strConnect, storeName, htParams, out dt, out twicedt, out thirddt);
+            else msg = dbm.ExecStoreThirdOutputResult(out dt, out twicedt, out thirddt);
+            if (msg.Length > 0) return msg;
+
+            msg = Convertor.DataTableToList(dt, out list);
+            msg = Convertor.DataTableToList(twicedt, out listTLL);
+            msg = Convertor.DataTableToList(thirddt, out listTLLL);
+
+            return msg;
+        }
+
+        public string ExecStoreThirdOutputResult(out DataTable dt, out DataTable dtTwice, out DataTable dtThird)
+        {
+            dt = null;
+            dtTwice = null;
+            dtThird = null;
+
+            List<object> outValues = null;
+            List<object> outValueTwice = null;
+            List<object> outValueThird = null;
+
+            string msg = "";
+            msg = ExecStoreThirdOutputResult(conn, transac, storeName, htParams, QueryTypeGetDataTable, false, null, null, out outValues, out outValueTwice, out outValueThird);
+            if (msg.Length > 0) return msg;
+
+            if (outValues.Count == 0) return "Error: No out value @ExecStoreThirdOutputResult with spName " + storeName;
+            if (outValueTwice.Count == 0) return "Error: No out value @ExecStoreThirdOutputResult with spName " + storeName;
+            if (outValueThird.Count == 0) return "Error: No out value @ExecStoreThirdOutputResult with spName " + storeName;
+
+            dt = outValues[0] as DataTable; // cast về DataTable. Trả về null nếu không cast được
+            dtTwice = outValueTwice[0] as DataTable; // cast về DataTable. Trả về null nếu không cast được
+            dtThird = outValueThird[0] as DataTable; // cast về DataTable. Trả về null nếu không cast được
+
+            return "";
+        }
+
+        static public string ExecStoreThirdOutputResult(string strConnect, string storeName, Hashtable htParams, out DataTable dt, out DataTable twicedt, out DataTable thirddt)
+        {
+            dt = null;
+            twicedt = null;
+            thirddt = null;
+
+            string msg = ExecStoreThirdOutputResult(strConnect, storeName, htParams, QueryTypeGetDataTable, null, out List<object> outValue, out List<object> outValueTwice, out List<object> outValueThird);
+            if (msg.Length > 0) return msg;
+
+            if (outValue == null) return "Error: outValue is null @ExecStoreThirdOutputResult";
+            if (outValue.Count == 0) return "Error: outValue has no value @ExecStoreThirdOutputResult";
+
+            if (outValueTwice == null) return "Error: outValueTwice is null @ExecStoreThirdOutputResult";
+            if (outValueTwice.Count == 0) return "Error: outValueTwice has no value @ExecStoreThirdOutputResult";
+
+            if (outValueThird == null) return "Error: outValueThird is null @ExecStoreThirdOutputResult";
+            if (outValueThird.Count == 0) return "Error: outValueThird has no value @ExecStoreThirdOutputResult";
+
+            dt = outValue[0] as DataTable; // cast về DataTable. Trả về null nếu không cast được
+            twicedt = outValueTwice[0] as DataTable; // cast về DataTable. Trả về null nếu không cast được
+            thirddt = outValueThird[0] as DataTable; // cast về DataTable. Trả về null nếu không cast được
+
+            return msg;
+        }
+
+        static private string ExecStoreThirdOutputResult(string strConnect, string storeName, Hashtable htParams, int queryType, List<string> outVarNames, out List<object> outValues, out List<object> outValueTwice, out List<object> outValueThird)
+        {
+            outValues = null;
+            outValueTwice = null;
+            outValueThird = null;
+
+            if (string.IsNullOrWhiteSpace(strConnect)) return "Error: Connection string is null or empty @ExecStoreThirdOutputResult";
+
+            DbConnection conn = GetDbConnection(strConnect);
+            var msg = ExecStoreThirdOutputResult(conn, null, storeName, htParams, queryType, false, null, outVarNames, out outValues, out outValueTwice, out outValueThird);
+            conn?.Dispose();
+
+            return msg;
+        }
+
+        static private string ExecStoreThirdOutputResult(DbConnection conn, DbTransaction transac, string storeName, Hashtable htParams, int queryType, bool isAsync, HandleCallbackFunc HandleCallback, List<string> outVarNames, out List<object> outValues, out List<object> outValueTwice, out List<object> outValueThird)
+        {
+            outValues = null;
+            outValueTwice = null;
+            outValueThird = null;
+
+            if (conn == null) return "Error: conn is null @ExecStoreThirdOutputResult";
+
+            string msg = "";
+
+            DbCommand cmdToExecute = new SqlCommand(storeName, conn as SqlConnection);
+
+            if (transac != null) cmdToExecute.Transaction = transac;
+
+            cmdToExecute.CommandType = CommandType.StoredProcedure;
+
+            string sParam = "";
+            if (htParams != null)
+            {
+                foreach (DictionaryEntry p in htParams)
+                {
+                    string value = "";
+                    DbParameter sp = null;
+
+                    if (p.Value == null)
+                    {
+                        sp = new SqlParameter(p.Key.ToString(), DBNull.Value);
+                        value = "null";
+                    }
+                    else if (p.Value.GetType().IsArray)
+                    {
+                        sp = new SqlParameter(p.Key.ToString(), SqlDbType.Binary);
+                        sp.Value = p.Value;
+                        value = "Binary Type";
+                    }
+                    else
+                    {
+                        sp = new SqlParameter(p.Key.ToString(), p.Value);
+                        if (p.Value.GetType() == typeof(DateTime))
+                        {
+                            value = "'" + DateTime.Parse(p.Value.ToString()).ToString("yyyy-MM-dd hh:mm:ss") + "'";
+                        }
+                        else if (p.Value.ToString() == "") value = "''";
+                        else value = p.Value.ToString();
+                    }
+
+                    cmdToExecute.Parameters.Add(sp);
+
+                    sParam += p.Key.ToString() + " = " + value + ",";
+                }
+            }
+
+            List<DbParameter> spOuts = null;
+            bool isOutRowsAffected = false;
+            if (outVarNames != null)
+            {
+                if (outVarNames.Count == 1 && outVarNames[0].ToLower() == "rowsaffected") isOutRowsAffected = true;
+                else
+                {
+                    spOuts = new List<DbParameter>();
+                    foreach (string outVarName in outVarNames)
+                    {
+                        DbParameter spOut = new SqlParameter(outVarName, DBNull.Value);
+
+                        spOut.Direction = ParameterDirection.Output;
+                        spOut.Size = 1000;
+                        cmdToExecute.Parameters.Add(spOut);
+
+                        spOuts.Add(spOut);
+                    }
+                }
+            }
+
+            int rowsAffected = -1;
+            try
+            {
+                if (conn.State != ConnectionState.Open) conn.Open();
+                switch (queryType)
+                {
+                    case QueryTypeNoOutput:
+                        if (isAsync)
+                        {
+                            if (HandleCallback == null) HandleCallback = HandleCallback_Default;
+                            AsyncCallback callback = new AsyncCallback(HandleCallback);
+
+                            ((SqlCommand)cmdToExecute).BeginExecuteNonQuery(callback, cmdToExecute);
+                        }
+                        else rowsAffected = cmdToExecute.ExecuteNonQuery();
+                        break;
+                    case QueryTypeWithOutputs:
+                        if (isOutRowsAffected) rowsAffected = cmdToExecute.ExecuteNonQuery();
+                        else
+                        {
+                            outValues = new List<object>();
+                            outValueTwice = new List<object>();
+                            outValueThird = new List<object>();
+
+                            if (outVarNames != null)
+                            {
+                                rowsAffected = cmdToExecute.ExecuteNonQuery();
+
+                                foreach (var spOut in spOuts) outValues.Add(spOut.Value);
+                            }
+                            else outValues.Add(cmdToExecute.ExecuteScalar());
+                        }
+                        break;
+                    case QueryTypeGetDataTable:
+                        using (var ds = new DataSet())
+                        {
+                            DbDataAdapter dad = new SqlDataAdapter((SqlCommand)cmdToExecute);
+
+                            rowsAffected = dad.Fill(ds);
+                            outValues = new List<object>();
+                            outValueTwice = new List<object>();
+                            outValueThird = new List<object>();
+
+                            outValues.Add(ds.Tables[0]);
+                            outValueTwice.Add(ds.Tables[1]);
+                            outValueThird.Add(ds.Tables[2]);
+
+                            dad.Dispose();
+                        }
+                        break;
+                    default: msg = "Error: QueryType is unknown @ExecStoreThirdOutputResult"; break;
                 }
             }
             catch (Exception ex)

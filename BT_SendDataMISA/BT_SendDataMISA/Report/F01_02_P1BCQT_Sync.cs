@@ -4,7 +4,7 @@ using BT_SendDataMISA.Function;
 using BT_SendDataMISA.HttpClientAPI;
 using BT_SendDataMISA.Models;
 using BT_SendDataMISA.Models.Report;
-using BT_SendDataMISA.Models.Report.B03TT90;
+using BT_SendDataMISA.Models.Report.F01_02;
 using FluentResults;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace BT_SendDataMISA.Report
 {
-    public class B03TT90_Sync
+    public class F01_02_P1BCQT_Sync
     {
         private DbMisaInfo _dbMisaInfo;
         private string _urlAPI;
@@ -21,7 +21,7 @@ namespace BT_SendDataMISA.Report
         public IConfiguration _configuration { get; }
         private readonly IMapper _mapper;
 
-        public B03TT90_Sync(DbMisaInfo dbMisaInfo, string urlAPI, string token, IConfiguration configuration, IMapper mapper)
+        public F01_02_P1BCQT_Sync(DbMisaInfo dbMisaInfo, string urlAPI, string token, IConfiguration configuration, IMapper mapper)
         {
             _dbMisaInfo = dbMisaInfo;
             _urlAPI = urlAPI;
@@ -30,9 +30,9 @@ namespace BT_SendDataMISA.Report
             _mapper = mapper;
         }
 
-        private string GetDataReport(out List<B03TT90Model> oListB03TT90)
+        private string GetDataReport(out List<F01_02_P1BCQTModel> oListF01_02_P1BCQT)
         {
-            oListB03TT90 = new List<B03TT90Model>();
+            oListF01_02_P1BCQT = new List<F01_02_P1BCQTModel>();
             var listStartEndDateOYear = CommonFunction.GetStartEndDateAllMonthInYear();
             if (listStartEndDateOYear.Count > 0)
             {
@@ -41,11 +41,19 @@ namespace BT_SendDataMISA.Report
                     string pStartDate = _dbMisaInfo.StartDate;
                     string pFromDate = eachMonth.FromDate;
                     string pToDate = eachMonth.ToDate;
+                    string ListBudgetSourceID = null;
                     string BudgetChapterCode = null;
-                    int IsSummaryChapter = 0;
+                    string ListBudgetKindItemCode = null;
+                    string EnumMethodDistributeID = null;
+                    string ProjectID = null;
+                    int IsSummaryBudgetSource = 0;
+                    int IsSummaryBudgetChapter = 0;
+                    int IsSummaryBudgetKindItem = 0;
+                    int IsSummaryMethodDistribute = 0;
+                    int IsSummaryProject = 0;
 
-                    string msg = Exec.MultipleResult("Proc_Other_GetB03_TT902018_ExportForX1", new { pStartDate, pFromDate, pToDate, BudgetChapterCode, IsSummaryChapter }, out ReportHeader outItem, out List<B03TT90DetailItem> oList);
-                    if (msg.Length > 0) return Msg.Exec_Proc_Other_GetB03_TT902018_ExportForX1_Err;
+                    string msg = Exec.ThirdOutputResult("Proc_FIR_GetF01_02_BCQT_P1_ToX1", new { pStartDate, pFromDate, pToDate, ListBudgetSourceID, BudgetChapterCode, ListBudgetKindItemCode, EnumMethodDistributeID, ProjectID, IsSummaryBudgetSource, IsSummaryBudgetChapter, IsSummaryBudgetKindItem, IsSummaryMethodDistribute, IsSummaryProject }, out ReportHeader outItem, out List<F01_02_P1BCQTDetailItem> oList, out List<F01_02_P1BCQTProjectItem> oListProject);
+                    if (msg.Length > 0) return Msg.Exec_Proc_FIR_GetF01_02_BCQT_P1_ToX1_Err;
 
                     if (outItem != null && (oList != null && oList.Count > 0))
                     {
@@ -54,37 +62,38 @@ namespace BT_SendDataMISA.Report
 
                         outItem = _mapper.Map<ReportHeader>(_dbMisaInfo);
                         outItem.RefID = RefID;
-                        outItem.ReportID = "B03TT90";
+                        outItem.ReportID = "F01_02_P1_BCQT";
                         outItem.ReportPeriod = eachMonth.Month;
                         outItem.ReportYear = eachMonth.Year;
                         outItem.BudgetChapterCode = oBudgetChapterCode;
                         outItem.BudgetChapterID = oBudgetChapterCode;
 
-                        B03TT90Model b03TT90 = new B03TT90Model
+                        F01_02_P1BCQTModel f01_02_P1BCQT = new F01_02_P1BCQTModel
                         {
                             ReportHeader = outItem,
-                            B03TT90Detail = oList
+                            F01_02_P1BCQTDetail = oList,
+                            F01_02_P1BCQTProject = oListProject
                         };
 
-                        oListB03TT90.Add(b03TT90);
+                        oListF01_02_P1BCQT.Add(f01_02_P1BCQT);
                     }
                 }
             }
-            if (oListB03TT90.Count == 0) return "Không có dữ liệu báo cáo";
+            if (oListF01_02_P1BCQT.Count == 0) return "Không có dữ liệu báo cáo";
 
             return "";
         }
 
         public async Task<Result> SendDataToAPI()
         {
-            string msg = GetDataReport(out List<B03TT90Model> oListB03TT90);
+            string msg = GetDataReport(out List<F01_02_P1BCQTModel> oListF01_02_P1BCQT);
             if (msg.Length > 0) return Result.Fail(msg);
 
-            string api = _configuration.GetValue<string>("ApiName:B03TT90_Receive");
-            if (string.IsNullOrEmpty(api)) return Result.Fail("Không tìm thấy cấu hình ApiName:B03TT90_Receive trong file appsettings.json");
+            string api = _configuration.GetValue<string>("ApiName:F01_02_P1BCQT_Receive");
+            if (string.IsNullOrEmpty(api)) return Result.Fail("Không tìm thấy cấu hình ApiName:F01_02_P1BCQT_Receive trong file appsettings.json");
 
             HttpClientPost httpClientPost = new HttpClientPost();
-            return await httpClientPost.SendsRequest(_urlAPI + api, _token, oListB03TT90);
+            return await httpClientPost.SendsRequest(_urlAPI + api, _token, oListF01_02_P1BCQT);
         }
     }
 }

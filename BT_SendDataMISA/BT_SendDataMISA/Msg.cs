@@ -12,5 +12,13 @@
 
         public static string Exec_GetDBInfoMisa_Err = "Lỗi ExecQueryStringOne GetDBInfoMisa";
         public static string Exec_Proc_FIR_Get02_BCTC_ExportForX1_Err = "Lỗi Exec Proc_FIR_Get02_BCTC_ExportForX1";
+        public static string Exec_Proc_FIR_Get03b_BCTC_ExportForX1_Err = "Lỗi Exec Proc_FIR_Get03b_BCTC_ExportForX1";
+        public static string Exec_Proc_Other_GetB03_TT902018_ExportForX1_Err = "Lỗi Exec Proc_Other_GetB03_TT902018_ExportForX1";
+        public static string Exec_Proc_FIR_Get04BCTC_ExportForX1_Err = "Lỗi Exec Proc_FIR_Get04BCTC_ExportForX1";
+        public static string Exec_Proc_Other_GetB04_TT902018_ExportForX1_Err = "Lỗi Exec Proc_Other_GetB04_TT902018_ExportForX1";
+        public static string Exec_Proc_FIR_Get01_BCTC_ExportForX1_Err = "Lỗi Exec Proc_FIR_Get01_BCTC_ExportForX1";
+        public static string Exec_Proc_FIR_Get01_BCQT_ToX1_Err = "Lỗi Exec Proc_FIR_Get01_BCQT_ToX1";
+        public static string Exec_Proc_FIR_Get01_01_BCQT_ExportForX1_Err = "Lỗi Exec Proc_FIR_Get01_01_BCQT_ExportForX1";
+        public static string Exec_Proc_FIR_GetF01_02_BCQT_P1_ToX1_Err = "Lỗi Exec Proc_FIR_GetF01_02_BCQT_P1_ToX1";
     }
 }

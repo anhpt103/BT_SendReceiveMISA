@@ -45,7 +45,7 @@ namespace BT_SendDataMISA.Report
                     int IsSummaryChapter = 0;
 
                     string msg = Exec.MultipleResult("Proc_Other_GetB04_TT902018_ExportForX1", new { pStartDate, pFromDate, pToDate, BudgetChapterCode, IsSummaryChapter }, out ReportHeader outItem, out List<B04TT90DetailItem> oList);
-                    if (msg.Length > 0) return Msg.Exec_Proc_FIR_Get02_BCTC_ExportForX1_Err;
+                    if (msg.Length > 0) return Msg.Exec_Proc_Other_GetB04_TT902018_ExportForX1_Err;
 
                     if (outItem != null && (oList != null && oList.Count > 0))
                     {
@@ -60,13 +60,13 @@ namespace BT_SendDataMISA.Report
                         outItem.BudgetChapterCode = oBudgetChapterCode;
                         outItem.BudgetChapterID = oBudgetChapterCode;
 
-                        B04TT90Model b01BCTC = new B04TT90Model
+                        B04TT90Model b04TT90 = new B04TT90Model
                         {
                             ReportHeader = outItem,
                             B04TT90Detail = oList
                         };
 
-                        oListB04TT90.Add(b01BCTC);
+                        oListB04TT90.Add(b04TT90);
                     }
                 }
             }

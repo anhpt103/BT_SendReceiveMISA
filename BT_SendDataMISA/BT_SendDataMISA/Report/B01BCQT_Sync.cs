@@ -44,7 +44,7 @@ namespace BT_SendDataMISA.Report
                     int IsSummarySXKD = 0;
 
                     string msg = Exec.MultipleResult("Proc_FIR_Get01_BCQT_ToX1", new { pStartDate, pFromDate, pToDate, IsSummarySXKD }, out ReportHeader outItem, out List<B01BCQTDetailItem> oList);
-                    if (msg.Length > 0) return Msg.Exec_Proc_FIR_Get02_BCTC_ExportForX1_Err;
+                    if (msg.Length > 0) return Msg.Exec_Proc_FIR_Get01_BCQT_ToX1_Err;
 
                     if (outItem != null && (oList != null && oList.Count > 0))
                     {

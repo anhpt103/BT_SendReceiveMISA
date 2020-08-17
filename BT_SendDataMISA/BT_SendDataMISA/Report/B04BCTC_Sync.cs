@@ -49,7 +49,7 @@ namespace BT_SendDataMISA.Report
                     string pIsPrintAllYearAndMonth13 = null;
 
                     string msg = Exec.MultipleResult("Proc_FIR_Get04BCTC_ExportForX1", new { pStartDate, pFromDate, pToDate, pBudgetChapter, pSummaryBudgetChapter, pIsGetFromGLFIRSetting, pMasterID, pIsPrintMonth13, pIsPrintAllYearAndMonth13 }, out ReportHeader outItem, out List<B04BCTCDetailItem> oList);
-                    if (msg.Length > 0) return Msg.Exec_Proc_FIR_Get02_BCTC_ExportForX1_Err;
+                    if (msg.Length > 0) return Msg.Exec_Proc_FIR_Get04BCTC_ExportForX1_Err;
 
                     if (outItem != null && (oList != null && oList.Count > 0))
                     {
