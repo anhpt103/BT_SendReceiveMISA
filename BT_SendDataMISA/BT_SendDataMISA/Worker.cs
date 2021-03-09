@@ -129,7 +129,6 @@ namespace BT_SendDataMISA
         {
             DoWorkB01BCTC(oMisaInfo, urlAPI, access_token);
             WriteLog("-------------------------------------");
-            return;
             DoWorkB02BCTC(oMisaInfo, urlAPI, access_token);
             WriteLog("-------------------------------------");
             DoWorkB03bBCTC(oMisaInfo, urlAPI, access_token);
