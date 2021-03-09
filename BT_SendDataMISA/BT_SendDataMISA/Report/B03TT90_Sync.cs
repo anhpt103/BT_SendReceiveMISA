@@ -38,13 +38,13 @@ namespace BT_SendDataMISA.Report
             {
                 foreach (var eachMonth in listStartEndDateOYear)
                 {
-                    string pStartDate = _dbMisaInfo.StartDate;
-                    string pFromDate = eachMonth.FromDate;
-                    string pToDate = eachMonth.ToDate;
+                    string StartDate = _dbMisaInfo.StartDate;
+                    string FromDate = eachMonth.FromDate;
+                    string ToDate = eachMonth.ToDate;
                     string BudgetChapterCode = null;
                     int IsSummaryChapter = 0;
 
-                    string msg = Exec.MultipleResult("Proc_Other_GetB03_TT902018_ExportForX1", new { pStartDate, pFromDate, pToDate, BudgetChapterCode, IsSummaryChapter }, out ReportHeader outItem, out List<B03TT90DetailItem> oList);
+                    string msg = Exec.MultipleResult("Proc_Other_GetB03_TT902018_ExportForX1", new { StartDate, FromDate, ToDate, BudgetChapterCode, IsSummaryChapter }, out ReportHeader outItem, out List<B03TT90DetailItem> oList);
                     if (msg.Length > 0) return Msg.Exec_Proc_Other_GetB03_TT902018_ExportForX1_Err;
 
                     if (outItem != null && (oList != null && oList.Count > 0))

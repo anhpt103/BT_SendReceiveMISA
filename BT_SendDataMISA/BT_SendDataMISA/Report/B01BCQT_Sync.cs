@@ -38,12 +38,12 @@ namespace BT_SendDataMISA.Report
             {
                 foreach (var eachMonth in listStartEndDateOYear)
                 {
-                    string pStartDate = _dbMisaInfo.StartDate;
-                    string pFromDate = eachMonth.FromDate;
-                    string pToDate = eachMonth.ToDate;
+                    string StartDate = _dbMisaInfo.StartDate;
+                    string FromDate = eachMonth.FromDate;
+                    string ToDate = eachMonth.ToDate;
                     int IsSummarySXKD = 0;
 
-                    string msg = Exec.MultipleResult("Proc_FIR_Get01_BCQT_ToX1", new { pStartDate, pFromDate, pToDate, IsSummarySXKD }, out ReportHeader outItem, out List<B01BCQTDetailItem> oList);
+                    string msg = Exec.MultipleResult("Proc_FIR_Get01_BCQT_ToX1", new { StartDate, FromDate, ToDate, IsSummarySXKD }, out ReportHeader outItem, out List<B01BCQTDetailItem> oList);
                     if (msg.Length > 0) return Msg.Exec_Proc_FIR_Get01_BCQT_ToX1_Err;
 
                     if (outItem != null && (oList != null && oList.Count > 0))

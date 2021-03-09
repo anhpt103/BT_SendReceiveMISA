@@ -13,6 +13,6 @@ namespace BT_SendDataMISA.Models.Report.F01_02
         public DateTime FinishDate { get; set; }
         public string ExecutionUnit { get; set; }
         public string ParentID { get; set; }
-        public int IsDetail { get; set; }
+        public bool IsDetail { get; set; }
     }
 }

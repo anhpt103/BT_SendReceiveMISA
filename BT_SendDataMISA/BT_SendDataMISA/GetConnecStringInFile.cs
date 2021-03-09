@@ -30,6 +30,9 @@ namespace BT_SendDataMISA
             string regexString = _configuration.GetValue<string>("exeConfigFile:RegexString");
             if (string.IsNullOrEmpty(regexString)) return "Không tìm thấy cấu hình RegexString trong file appsettings.json";
 
+            string userId = _configuration.GetValue<string>("exeConfigFile:UserId");
+            if (string.IsNullOrEmpty(regexString)) return "Không tìm thấy cấu hình UserId trong file appsettings.json";
+
             try
             {
                 XmlDocument doc = new XmlDocument();
@@ -58,7 +61,7 @@ namespace BT_SendDataMISA
                 match = regex.Match(connectString);
                 if (match == null || match.Groups.Count == 0 || match.Length == 0) return "Không lấy được thông tin UserID Login SQL MISA";
 
-                string authentication = string.Format(@"User ID={0};Password={1}", match.Groups[2].Value, passWord);
+                string authentication = string.Format(@"User ID={0};Password={1}", userId, passWord);
                 connectString += authentication;
             }
             catch (Exception ex)
